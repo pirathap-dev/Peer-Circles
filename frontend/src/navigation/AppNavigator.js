@@ -9,6 +9,8 @@ import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import HomeScreen from '../screens/HomeScreen';
 import CommunityDetailsScreen from '../screens/CommunityDetailsScreen';
+import ProfileScreen from '../screens/ProfileScreen';
+import EditProfileScreen from '../screens/EditProfileScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -42,11 +44,25 @@ export default function AppNavigator() {
               component={CommunityDetailsScreen}
               options={{ title: 'Community' }}
             />
+            <Stack.Screen
+              name="Profile"
+              component={ProfileScreen}
+              options={{ title: 'Profile' }}
+            />
+            <Stack.Screen
+              name="EditProfile"
+              component={EditProfileScreen}
+              options={{ title: 'Edit Profile' }}
+            />
           </>
         ) : (
           <>
             <Stack.Screen name="Login" component={LoginScreen} options={authScreenOptions} />
-            <Stack.Screen name="Register" component={RegisterScreen} options={{ ...authScreenOptions, headerShown: true, title: 'Create account' }} />
+            <Stack.Screen
+              name="Register"
+              component={RegisterScreen}
+              options={{ headerShown: true, title: 'Create account' }}
+            />
           </>
         )}
       </Stack.Navigator>

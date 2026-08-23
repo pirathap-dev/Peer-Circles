@@ -93,10 +93,10 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.flex}>
       <View style={styles.container}>
         <View style={styles.topBar}>
-          <View>
+          <TouchableOpacity onPress={() => navigation.navigate('Profile')} activeOpacity={0.7}>
             <Text style={styles.welcome}>Welcome, {user?.name?.split(' ')[0] || 'friend'}</Text>
             <Text style={styles.subhead}>Find your community</Text>
-          </View>
+          </TouchableOpacity>
           <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
             <Text style={styles.logoutText}>Sign out</Text>
           </TouchableOpacity>
