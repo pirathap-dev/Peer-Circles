@@ -3,6 +3,7 @@ const db = require('../config/db');
 const { hashPassword, comparePassword } = require('./passwordService');
 const { signToken } = require('./tokenService');
 
+// Create a new user in the database. Throws an error if the email is already taken.
 async function createUser({ name, email, password }) {
   const existing = await db.query('SELECT id FROM users WHERE email = $1', [email.toLowerCase()]);
   if (existing.rowCount > 0) {
