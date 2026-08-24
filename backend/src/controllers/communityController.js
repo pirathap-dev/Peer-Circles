@@ -43,6 +43,7 @@ exports.getCommunity = async (req, res) => {
   }
 };
 
+// Join a community
 exports.joinCommunity = async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
