@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { View, Text, TextInput, FlatList, StyleSheet, RefreshControl, SafeAreaView, TouchableOpacity, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { colors, spacing } from '../config';
@@ -9,6 +9,14 @@ import Loader from '../components/Loader';
 import EmptyState from '../components/EmptyState';
 import Button from '../components/Button';
 
+const LOCATION_FILTERS = [
+  { label: 'All', value: '' },
+  { label: 'Online', value: 'online' },
+  { label: 'In-person', value: 'in_person' },
+];
+
+const SEARCH_DEBOUNCE_MS = 400;
+
 export default function HomeScreen() {
   const { user, token, logout } = useAuth();
   const navigation = useNavigation();
@@ -18,13 +26,16 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
+  const [location, setLocation] = useState('');
   const [pendingId, setPendingId] = useState(null);
 
+  const debounceRef = useRef(null);
+
   const loadCommunities = useCallback(
-    async (term = '') => {
+    async (term = '', loc = '') => {
       try {
         setError('');
-        const data = await api.listCommunities(token, { search: term });
+        const data = await api.listCommunities(token, { search: term, location: loc || undefined });
         setCommunities(data.communities || []);
       } catch (err) {
         setError(err.message || 'Could not load communities.');
@@ -36,18 +47,34 @@ export default function HomeScreen() {
     [token]
   );
 
-  React.useEffect(() => {
-    loadCommunities();
-  }, [loadCommunities]);
+  useEffect(() => {
+    loadCommunities(search, location);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
 
   function onRefresh() {
     setRefreshing(true);
-    loadCommunities(search);
+    loadCommunities(search, location);
   }
 
   function onSearchChange(text) {
     setSearch(text);
-    loadCommunities(text);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      loadCommunities(text, location);
+    }, SEARCH_DEBOUNCE_MS);
+  }
+
+  function onLocationChange(value) {
+    setLocation(value);
+    setLoading(true);
+    loadCommunities(search, value);
   }
 
   async function handleJoin(community) {
@@ -95,7 +122,7 @@ export default function HomeScreen() {
         <View style={styles.topBar}>
           <TouchableOpacity onPress={() => navigation.navigate('Profile')} activeOpacity={0.7}>
             <Text style={styles.welcome}>Welcome, {user?.name?.split(' ')[0] || 'friend'}</Text>
-            <Text style={styles.subhead}>Find your community</Text>
+            <Text style={styles.subhead}>Find your support group</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
             <Text style={styles.logoutText}>Sign out</Text>
@@ -105,12 +132,29 @@ export default function HomeScreen() {
         <View style={styles.searchBox}>
           <TextInput
             style={styles.searchInput}
-            placeholder="Search communities..."
+            placeholder="Search support groups..."
             placeholderTextColor={colors.textMuted}
             value={search}
             onChangeText={onSearchChange}
             returnKeyType="search"
           />
+        </View>
+
+        <View style={styles.filterRow}>
+          {LOCATION_FILTERS.map((f) => {
+            const active = location === f.value;
+            return (
+              <TouchableOpacity
+                key={f.value}
+                onPress={() => onLocationChange(f.value)}
+                style={[styles.filterChip, active && styles.filterChipActive]}
+              >
+                <Text style={[styles.filterChipText, active && styles.filterChipTextActive]}>
+                  {f.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         <Text style={styles.sectionTitle}>Support Communities</Text>
@@ -120,12 +164,12 @@ export default function HomeScreen() {
         ) : error ? (
           <View style={styles.centerContent}>
             <Text style={styles.errorText}>{error}</Text>
-            <Button label="Try again" onPress={() => loadCommunities(search)} style={styles.retry} />
+            <Button label="Try again" onPress={() => loadCommunities(search, location)} style={styles.retry} />
           </View>
         ) : communities.length === 0 ? (
           <EmptyState
-            title="No communities found"
-            message="Try a different search or check back later."
+            title="No support groups found"
+            message="Try a different search or filter."
           />
         ) : (
           <FlatList
@@ -200,7 +244,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: 14,
     paddingHorizontal: 14,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   searchInput: {
     flex: 1,
@@ -208,6 +252,32 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: colors.text,
     fontFamily: 'System',
+  },
+  filterRow: {
+    flexDirection: 'row',
+    marginBottom: spacing.lg,
+  },
+  filterChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    marginRight: 8,
+  },
+  filterChipActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  filterChipText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.textMuted,
+    fontFamily: 'System',
+  },
+  filterChipTextActive: {
+    color: colors.surface,
   },
   sectionTitle: {
     fontSize: 18,
