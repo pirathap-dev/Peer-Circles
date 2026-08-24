@@ -5,6 +5,7 @@ const config = require('./config');
 const authRoutes = require('./routes/authRoutes');
 const communityRoutes = require('./routes/communityRoutes');
 const errorHandler = require('./middleware/errorHandler');
+const groupRoutes = require('./routes/groupRoutes');
 
 const app = express();
 
@@ -14,6 +15,7 @@ app.use(express.json());
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 
 app.use('/api/auth', authRoutes);
+app.use('/api/groups', groupRoutes);
 app.use('/api/communities', communityRoutes);
 
 app.use((_req, res) => {
