@@ -53,6 +53,9 @@ export const api = {
 
   me: (token) => request('/auth/me', { token }),
 
+  updateProfile: (token, { name, email }) =>
+    request('/auth/me', { method: 'PATCH', body: { name, email }, token }),
+
   listCommunities: (token, { search, location } = {}) => {
     const params = new URLSearchParams();
     if (search) params.append('search', search);

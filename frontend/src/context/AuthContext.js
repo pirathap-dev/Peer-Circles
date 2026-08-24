@@ -44,9 +44,17 @@ export function AuthProvider({ children }) {
     await clearAuth();
   }, []);
 
+  const updateUser = useCallback(
+    async (updatedUser) => {
+      setUser(updatedUser);
+      if (token) await saveAuth(token, updatedUser);
+    },
+    [token]
+  );
+
   return (
     <AuthContext.Provider
-      value={{ user, token, loading, login, register, logout, isAuthenticated: !!token }}
+      value={{ user, token, loading, login, register, logout, updateUser, isAuthenticated: !!token }}
     >
       {children}
     </AuthContext.Provider>
