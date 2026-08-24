@@ -1,6 +1,7 @@
 // Community controllers: list, details, join, leave.
 const communityService = require('../services/communityService');
 
+// List communities with optional search and location filters
 exports.listCommunities = async (req, res) => {
   try {
     const { search, location } = req.query;
@@ -61,6 +62,7 @@ exports.joinCommunity = async (req, res) => {
   }
 };
 
+// Leave a community
 exports.leaveCommunity = async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);

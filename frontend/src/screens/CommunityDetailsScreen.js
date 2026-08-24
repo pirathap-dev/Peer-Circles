@@ -34,10 +34,12 @@ export default function CommunityDetailsScreen() {
     load();
   }, [load]);
 
+  // Update the navigation title when the community data is loaded
   React.useEffect(() => {
     navigation.setOptions({ title: community?.name || 'Community' });
   }, [navigation, community?.name]);
 
+  // Function to handle joining or leaving the community
   async function toggleMembership() {
     if (!community) return;
     setPending(true);
@@ -65,6 +67,7 @@ export default function CommunityDetailsScreen() {
     );
   }
 
+  // Render the community details
   return (
     <SafeAreaView style={styles.flex}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
