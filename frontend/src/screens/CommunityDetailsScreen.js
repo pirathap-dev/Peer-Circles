@@ -34,6 +34,10 @@ export default function CommunityDetailsScreen() {
     load();
   }, [load]);
 
+  React.useEffect(() => {
+    navigation.setOptions({ title: community?.name || 'Community' });
+  }, [navigation, community?.name]);
+
   async function toggleMembership() {
     if (!community) return;
     setPending(true);
@@ -47,8 +51,6 @@ export default function CommunityDetailsScreen() {
       setPending(false);
     }
   }
-
-  navigation.setOptions({ title: community?.name || 'Community' });
 
   if (loading) return <SafeAreaView style={styles.flex}><Loader style={styles.loader} /></SafeAreaView>;
 
