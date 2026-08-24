@@ -9,6 +9,8 @@ import Loader from '../components/Loader';
 import EmptyState from '../components/EmptyState';
 import Button from '../components/Button';
 
+
+//implement search
 const LOCATION_FILTERS = [
   { label: 'All', value: '' },
   { label: 'Online', value: 'online' },
