@@ -1,5 +1,6 @@
 const groupService = require('../services/groupService');
 
+// view groups detaials
 exports.getGroups = async (req, res) => {
   try {
     const groups = await groupService.getAllGroups();
