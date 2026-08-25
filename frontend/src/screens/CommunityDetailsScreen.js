@@ -6,7 +6,7 @@ import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import Button from '../components/Button';
 import Loader from '../components/Loader';
-// CommunityDetailsScreen.js
+// view support group
 export default function CommunityDetailsScreen() {
   const navigation = useNavigation();
   const route = useRoute();
