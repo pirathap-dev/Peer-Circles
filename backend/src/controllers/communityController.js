@@ -24,6 +24,7 @@ exports.listCommunities = async (req, res) => {
   }
 };
 
+// Get details of a specific community by ID
 exports.getCommunity = async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);

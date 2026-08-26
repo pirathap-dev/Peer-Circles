@@ -17,6 +17,7 @@ exports.getGroups = async (req, res) => {
   }
 };
 
+// Get a specific support group by ID
 exports.getGroupById = async (req, res) => {
   try {
     const group = await groupService.getGroupById(req.params.id);

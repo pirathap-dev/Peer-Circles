@@ -18,6 +18,7 @@ export default function CommunityDetailsScreen() {
   const [error, setError] = useState('');
   const [pending, setPending] = useState(false);
 
+  // Load community details from the API
   const load = useCallback(async () => {
     try {
       setError('');
@@ -56,6 +57,7 @@ export default function CommunityDetailsScreen() {
 
   if (loading) return <SafeAreaView style={styles.flex}><Loader style={styles.loader} /></SafeAreaView>;
 
+  // Show error message if there was an error and no community data is available
   if (error && !community) {
     return (
       <SafeAreaView style={styles.flex}>
