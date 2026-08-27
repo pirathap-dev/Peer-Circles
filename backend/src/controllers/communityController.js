@@ -29,6 +29,7 @@ exports.getCommunity = async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     const community = await communityService.getCommunityById(id);
+    // Check if the community exists
     if (!community) {
       return res.status(404).json({ error: 'Community not found.' });
     }

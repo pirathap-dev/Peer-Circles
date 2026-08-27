@@ -60,6 +60,7 @@ export default function CommunityDetailsScreen() {
   // Show error message if there was an error and no community data is available
   if (error && !community) {
     return (
+      // Render an error message with a retry button
       <SafeAreaView style={styles.flex}>
         <View style={styles.center}>
           <Text style={styles.errorText}>{error}</Text>
