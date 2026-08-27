@@ -105,6 +105,7 @@ export default function CommunityDetailsScreen() {
   );
 }
 
+// Styles for the CommunityDetailsScreen component
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.background },
   scroll: { padding: spacing.lg, paddingBottom: 40 },
