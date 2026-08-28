@@ -6,6 +6,8 @@ const authRoutes = require('./routes/authRoutes');
 const communityRoutes = require('./routes/communityRoutes');
 const errorHandler = require('./middleware/errorHandler');
 const groupRoutes = require('./routes/groupRoutes');
+const groupDiscussionRoutes = require('./routes/groupDiscussionRoutes');
+
 
 const app = express();
 
@@ -17,6 +19,7 @@ app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 app.use('/api/auth', authRoutes);
 app.use('/api/groups', groupRoutes);
 app.use('/api/communities', communityRoutes);
+app.use('/api', groupDiscussionRoutes);
 
 app.use((_req, res) => {
   res.status(404).json({ error: 'Route not found.' });
