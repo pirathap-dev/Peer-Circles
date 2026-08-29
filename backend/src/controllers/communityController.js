@@ -67,6 +67,7 @@ exports.joinCommunity = async (req, res) => {
 // Leave a community
 exports.leaveCommunity = async (req, res) => {
   try {
+    // Validate community ID
     const id = parseInt(req.params.id, 10);
     const community = await communityService.leaveCommunity(req.user.id, id);
     res.json({ message: 'Left community.', community });
