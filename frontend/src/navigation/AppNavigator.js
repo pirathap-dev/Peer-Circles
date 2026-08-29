@@ -13,6 +13,7 @@ import ProfileScreen from '../screens/ProfileScreen';
 import EditProfileScreen from '../screens/EditProfileScreen';
 import DiscussionListScreen from '../screens/DiscussionListScreen';
 import CreateDiscussionScreen from '../screens/CreateDiscussionScreen';
+import DiscussionDetailScreen from '../screens/DiscussionDetailScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -55,6 +56,11 @@ export default function AppNavigator() {
               name="CreateDiscussion"
               component={CreateDiscussionScreen}
               options={{ title: 'New Discussion' }}
+            />
+            <Stack.Screen
+              name="DiscussionDetail"
+              component={DiscussionDetailScreen}
+              options={{ title: 'Discussion' }}
             />
             <Stack.Screen
               name="Profile"
