@@ -1,12 +1,12 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, SafeAreaView, Alert } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { colors, spacing } from '../config';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import Button from '../components/Button';
 import Loader from '../components/Loader';
-// join support
+
 export default function CommunityDetailsScreen() {
   const navigation = useNavigation();
   const route = useRoute();
@@ -55,6 +55,25 @@ export default function CommunityDetailsScreen() {
     }
   }
 
+  function handleViewDiscussions() {
+    if (!community) return;
+    if (!community.is_member) {
+      Alert.alert(
+        'Join Required',
+        'You must join this community to view and participate in discussions.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Join Community', onPress: toggleMembership },
+        ]
+      );
+      return;
+    }
+    navigation.navigate('DiscussionList', {
+      communityId: community.id,
+      communityName: community.name,
+    });
+  }
+
   if (loading) return <SafeAreaView style={styles.flex}><Loader style={styles.loader} /></SafeAreaView>;
 
   // Show error message if there was an error and no community data is available
@@ -92,6 +111,18 @@ export default function CommunityDetailsScreen() {
 
         <Text style={styles.sectionTitle}>About this community</Text>
         <Text style={styles.description}>{community.description}</Text>
+
+        {community.is_member && (
+          <View style={styles.discussionSection}>
+            <Text style={styles.sectionTitle}>Participate</Text>
+            <Button
+              label="View Discussions"
+              onPress={handleViewDiscussions}
+              variant="primary"
+              style={styles.discussionButton}
+            />
+          </View>
+        )}
 
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
@@ -143,6 +174,13 @@ const styles = StyleSheet.create({
     fontFamily: 'System',
   },
   action: { marginTop: spacing.sm },
+  discussionSection: {
+    marginTop: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  discussionButton: {
+    marginTop: spacing.sm,
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',

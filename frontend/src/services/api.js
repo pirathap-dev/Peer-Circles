@@ -71,4 +71,35 @@ export const api = {
 
   leaveCommunity: (token, id) =>
     request(`/communities/${id}/leave`, { method: 'DELETE', token }),
+
+  // Discussion endpoints
+  listDiscussions: (token, communityId) =>
+    request(`/communities/${communityId}/discussions`, { token }),
+
+  getDiscussion: (token, communityId, discussionId) =>
+    request(`/communities/${communityId}/discussions/${discussionId}`, { token }),
+
+  createDiscussion: (token, communityId, { title, content }) =>
+    request(`/communities/${communityId}/discussions`, {
+      method: 'POST',
+      body: { title, content },
+      token,
+    }),
+
+  deleteDiscussion: (token, communityId, discussionId) =>
+    request(`/communities/${communityId}/discussions/${discussionId}`, {
+      method: 'DELETE',
+      token,
+    }),
+
+  // Comment endpoints
+  listComments: (token, discussionId) =>
+    request(`/discussions/${discussionId}/comments`, { token }),
+
+  createComment: (token, discussionId, { content }) =>
+    request(`/discussions/${discussionId}/comments`, {
+      method: 'POST',
+      body: { content },
+      token,
+    }),
 };
