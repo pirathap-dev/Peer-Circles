@@ -21,6 +21,7 @@ app.use('/api/groups', groupRoutes);
 app.use('/api/communities', communityRoutes);
 app.use('/api', groupDiscussionRoutes);
 
+
 app.use((_req, res) => {
   res.status(404).json({ error: 'Route not found.' });
 });

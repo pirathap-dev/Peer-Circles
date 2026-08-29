@@ -13,5 +13,10 @@ router.get(
   authRequired,
   groupDiscussionController.getGroupPosts
 );
+router.post(
+  '/groups/:id/posts',
+  authRequired,
+  groupDiscussionController.createGroupPost
+);
 
 module.exports = router;
