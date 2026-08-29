@@ -11,6 +11,8 @@ import HomeScreen from '../screens/HomeScreen';
 import CommunityDetailsScreen from '../screens/CommunityDetailsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import EditProfileScreen from '../screens/EditProfileScreen';
+import DiscussionListScreen from '../screens/DiscussionListScreen';
+import CreateDiscussionScreen from '../screens/CreateDiscussionScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -43,6 +45,16 @@ export default function AppNavigator() {
               name="CommunityDetails"
               component={CommunityDetailsScreen}
               options={{ title: 'Community' }}
+            />
+            <Stack.Screen
+              name="DiscussionList"
+              component={DiscussionListScreen}
+              options={{ title: 'Discussions' }}
+            />
+            <Stack.Screen
+              name="CreateDiscussion"
+              component={CreateDiscussionScreen}
+              options={{ title: 'New Discussion' }}
             />
             <Stack.Screen
               name="Profile"
