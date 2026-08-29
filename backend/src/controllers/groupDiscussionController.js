@@ -1,6 +1,7 @@
 const groupDiscussionService = require('../services/groupDiscussionService');
 const db = require('../config/db');
 
+// Get posts for a specific group
 exports.getGroupPosts = async (req, res) => {
   try {
     const userId = req.user.id;
