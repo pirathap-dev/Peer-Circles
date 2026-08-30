@@ -3,6 +3,8 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { colors, spacing } from '../config';
 import Button from './Button';
 
+// CommunityCard component displays information about a community and allows users to join or leave the community.
+
 export default function CommunityCard({ community, onPress, onJoin, onLeave, joinLoading }) {
   return (
     <TouchableOpacity

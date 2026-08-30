@@ -18,6 +18,7 @@ export default function CommunityDetailsScreen() {
   const [error, setError] = useState('');
   const [pending, setPending] = useState(false);
 
+  // Load community details from the API
   const load = useCallback(async () => {
     try {
       setError('');
@@ -34,10 +35,12 @@ export default function CommunityDetailsScreen() {
     load();
   }, [load]);
 
+  // Update the navigation title when the community data is loaded
   React.useEffect(() => {
     navigation.setOptions({ title: community?.name || 'Community' });
   }, [navigation, community?.name]);
 
+  // Function to handle joining or leaving the community
   async function toggleMembership() {
     if (!community) return;
     setPending(true);
@@ -73,8 +76,10 @@ export default function CommunityDetailsScreen() {
 
   if (loading) return <SafeAreaView style={styles.flex}><Loader style={styles.loader} /></SafeAreaView>;
 
+  // Show error message if there was an error and no community data is available
   if (error && !community) {
     return (
+      // Render an error message with a retry button
       <SafeAreaView style={styles.flex}>
         <View style={styles.center}>
           <Text style={styles.errorText}>{error}</Text>
@@ -84,6 +89,7 @@ export default function CommunityDetailsScreen() {
     );
   }
 
+  // Render the community details
   return (
     <SafeAreaView style={styles.flex}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -131,6 +137,7 @@ export default function CommunityDetailsScreen() {
   );
 }
 
+// Styles for the CommunityDetailsScreen component
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.background },
   scroll: { padding: spacing.lg, paddingBottom: 40 },

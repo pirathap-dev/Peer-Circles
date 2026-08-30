@@ -5,6 +5,7 @@ import { colors, spacing } from '../config';
 import { useAuth } from '../context/AuthContext';
 import Button from '../components/Button';
 
+// ProfileScreen component displays the user's profile information and allows them to edit their profile or sign out.
 function getInitials(name) {
   if (!name) return '?';
   const parts = name.trim().split(/\s+/);
@@ -13,6 +14,9 @@ function getInitials(name) {
   return (first + last).toUpperCase();
 }
 
+
+
+// Format the join date to a more readable format (e.g., "January 2023").
 function formatJoinDate(dateString) {
   if (!dateString) return null;
   const d = new Date(dateString);
@@ -20,6 +24,8 @@ function formatJoinDate(dateString) {
   return d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
 }
 
+
+// ProfileScreen component displays the user's profile information and allows them to edit their profile or sign out.
 export default function ProfileScreen() {
   const navigation = useNavigation();
   const { user, logout } = useAuth();
@@ -83,6 +89,7 @@ export default function ProfileScreen() {
   );
 }
 
+// Styles for the ProfileScreen component.
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.background },
   scroll: { padding: spacing.lg, paddingBottom: 40 },

@@ -1,6 +1,7 @@
 // Community controllers: list, details, join, leave.
 const communityService = require('../services/communityService');
 
+// List communities with optional search and location filters
 exports.listCommunities = async (req, res) => {
   try {
     const { search, location } = req.query;
@@ -23,10 +24,12 @@ exports.listCommunities = async (req, res) => {
   }
 };
 
+// Get details of a specific community by ID
 exports.getCommunity = async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     const community = await communityService.getCommunityById(id);
+    // Check if the community exists
     if (!community) {
       return res.status(404).json({ error: 'Community not found.' });
     }
@@ -43,6 +46,7 @@ exports.getCommunity = async (req, res) => {
   }
 };
 
+// Join a community
 exports.joinCommunity = async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
@@ -60,8 +64,10 @@ exports.joinCommunity = async (req, res) => {
   }
 };
 
+// Leave a community
 exports.leaveCommunity = async (req, res) => {
   try {
+    // Validate community ID
     const id = parseInt(req.params.id, 10);
     const community = await communityService.leaveCommunity(req.user.id, id);
     res.json({ message: 'Left community.', community });

@@ -17,6 +17,7 @@ const LOCATION_FILTERS = [
   { label: 'In-person', value: 'in_person' },
 ];
 
+// Debounce time for search input
 const SEARCH_DEBOUNCE_MS = 400;
 
 export default function HomeScreen() {
@@ -65,6 +66,7 @@ export default function HomeScreen() {
     loadCommunities(search, location);
   }
 
+  // Debounced search input handler
   function onSearchChange(text) {
     setSearch(text);
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -79,6 +81,7 @@ export default function HomeScreen() {
     loadCommunities(search, value);
   }
 
+  // Handle joining a community
   async function handleJoin(community) {
     setPendingId(community.id);
     try {

@@ -2,6 +2,9 @@
 node_modules/
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> origin/PC-67-database-integration-implement-discussion-comments
 # Environment variables
 .env
 .env.local
@@ -9,6 +12,9 @@ node_modules/
 .env.development
 .env.production
 .env.test
+.env.test.local
+.env.development.local
+.env.production.local
 
 # Expo
 .expo/
@@ -29,7 +35,10 @@ yarn-error.log*
 # OS files
 .DS_Store
 Thumbs.db
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> origin/PC-67-database-integration-implement-discussion-comments
 # Environment files
 .env
 .env.*
@@ -41,4 +50,7 @@ Thumbs.db
 .DS_Store
 Thumbs.db
 .vscode/
+<<<<<<< HEAD
 >>>>>>> origin/PC-66-backend-implement-discussion-comment-api
+=======
+>>>>>>> origin/PC-67-database-integration-implement-discussion-comments
