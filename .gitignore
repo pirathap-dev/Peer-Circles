@@ -1,6 +1,7 @@
 # Dependencies
 node_modules/
 
+<<<<<<< HEAD
 # Environment variables
 .env
 .env.local
@@ -28,3 +29,16 @@ yarn-error.log*
 # OS files
 .DS_Store
 Thumbs.db
+=======
+# Environment files
+.env
+.env.*
+
+# Logs
+*.log
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.vscode/
+>>>>>>> origin/PC-66-backend-implement-discussion-comment-api
