@@ -7,12 +7,15 @@ const communityRoutes = require('./routes/communityRoutes');
 const errorHandler = require('./middleware/errorHandler');
 const groupRoutes = require('./routes/groupRoutes');
 const groupDiscussionRoutes = require('./routes/groupDiscussionRoutes');
+const uploadRoutes = require('./routes/uploadRoutes');
 
 
 const app = express();
 
 app.use(cors());
-app.use(express.json());
+// Allow larger JSON bodies (e.g. base64 image uploads). Default 100kb is too
+// small for a profile picture, so raise it to 10mb.
+app.use(express.json({ limit: '10mb' }));
 
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 
@@ -20,6 +23,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/groups', groupRoutes);
 app.use('/api/communities', communityRoutes);
 app.use('/api', groupDiscussionRoutes);
+app.use('/api/upload', uploadRoutes);
 
 
 app.use((_req, res) => {

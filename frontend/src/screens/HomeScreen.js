@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { View, Text, TextInput, FlatList, StyleSheet, RefreshControl, SafeAreaView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TextInput, FlatList, StyleSheet, RefreshControl, SafeAreaView, TouchableOpacity, Alert, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { colors, spacing } from '../config';
 import { api } from '../services/api';
@@ -20,8 +20,17 @@ const LOCATION_FILTERS = [
 // Debounce time for search input
 const SEARCH_DEBOUNCE_MS = 400;
 
+// First + last initials for the avatar fallback circle.
+function getInitials(name) {
+  if (!name) return '?';
+  const parts = name.trim().split(/\s+/);
+  const first = parts[0]?.[0] || '';
+  const last = parts.length > 1 ? parts[parts.length - 1][0] : '';
+  return (first + last).toUpperCase();
+}
+
 export default function HomeScreen() {
-  const { user, token, logout } = useAuth();
+  const { user, token } = useAuth();
   const navigation = useNavigation();
 
   const [communities, setCommunities] = useState([]);
@@ -114,25 +123,26 @@ export default function HomeScreen() {
     navigation.navigate('CommunityDetails', { id: community.id });
   }
 
-  function handleLogout() {
-    Alert.alert('Sign out', 'Are you sure you want to sign out?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign out', style: 'destructive', onPress: logout },
-    ]);
-  }
-
   return (
     <SafeAreaView style={styles.flex}>
       <View style={styles.container}>
-        <View style={styles.topBar}>
-          <TouchableOpacity onPress={() => navigation.navigate('Profile')} activeOpacity={0.7}>
+        <TouchableOpacity
+          onPress={() => navigation.navigate('Profile')}
+          style={styles.topBar}
+          activeOpacity={0.7}
+        >
+          {user?.avatar_url ? (
+            <Image source={{ uri: user.avatar_url }} style={styles.avatar} />
+          ) : (
+            <View style={[styles.avatar, styles.avatarFallback]}>
+              <Text style={styles.avatarText}>{getInitials(user?.name)}</Text>
+            </View>
+          )}
+          <View style={styles.topBarText}>
             <Text style={styles.welcome}>Welcome, {user?.name?.split(' ')[0] || 'friend'}</Text>
             <Text style={styles.subhead}>Find your support group</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
-            <Text style={styles.logoutText}>Sign out</Text>
-          </TouchableOpacity>
-        </View>
+          </View>
+        </TouchableOpacity>
 
         <View style={styles.searchBox}>
           <TextInput
@@ -198,10 +208,7 @@ export default function HomeScreen() {
         )}
 
         <View style={styles.disclaimer}>
-          <Text style={styles.disclaimerText}>
-            This platform provides peer support and community connection. It is not a substitute for
-            professional mental-health care.
-          </Text>
+          
         </View>
       </View>
     </SafeAreaView>
@@ -213,9 +220,12 @@ const styles = StyleSheet.create({
   container: { flex: 1, padding: spacing.lg },
   topBar: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 12,
     marginBottom: spacing.md,
+  },
+  topBarText: {
+    flex: 1,
   },
   welcome: {
     fontSize: 24,
@@ -229,16 +239,21 @@ const styles = StyleSheet.create({
     marginTop: 2,
     fontFamily: 'System',
   },
-  logoutBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
-    backgroundColor: colors.primarySoft,
+  avatar: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: colors.surface,
   },
-  logoutText: {
-    color: colors.primaryDark,
-    fontSize: 14,
-    fontWeight: '600',
+  avatarFallback: {
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    fontSize: 19,
+    fontWeight: '700',
+    color: colors.surface,
     fontFamily: 'System',
   },
   searchBox: {

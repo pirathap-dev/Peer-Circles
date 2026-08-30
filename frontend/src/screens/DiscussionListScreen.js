@@ -24,7 +24,7 @@ export default function DiscussionListScreen() {
     try {
       setError('');
       const data = await api.listDiscussions(token, communityId);
-      setDiscussions(data.discussions || []);
+      setDiscussions(data.posts || []);
     } catch (err) {
       setError(err.message || 'Could not load discussions.');
     } finally {

@@ -18,7 +18,7 @@ exports.register = async (req, res) => {
     res.status(201).json({
       message: 'Account created successfully.',
       token,
-      user: { id: user.id, name: user.name, email: user.email },
+      user: { id: user.id, name: user.name, email: user.email, avatar_url: user.avatar_url || null },
     });
   } catch (err) {
     if (err.code === 'EMAIL_TAKEN') {
@@ -43,7 +43,7 @@ exports.login = async (req, res) => {
     res.json({
       message: 'Login successful.',
       token,
-      user: { id: user.id, name: user.name, email: user.email },
+      user: { id: user.id, name: user.name, email: user.email, avatar_url: user.avatar_url || null },
     });
   } catch (err) {
     if (err.code === 'INVALID_CREDENTIALS') {
@@ -64,5 +64,33 @@ exports.me = async (req, res) => {
   } catch (err) {
     console.error('Me error:', err);
     return res.status(500).json({ error: 'Could not load user.' });
+  }
+};
+
+exports.updateMe = async (req, res) => {
+  const { name, email, avatar_url } = req.body;
+
+  if (!name || !name.trim()) {
+    return res.status(400).json({ error: 'Name is required.' });
+  }
+  if (!email || !email.trim() || !email.includes('@')) {
+    return res.status(400).json({ error: 'A valid email is required.' });
+  }
+  if (avatar_url !== undefined && avatar_url !== null && typeof avatar_url !== 'string') {
+    return res.status(400).json({ error: 'avatar_url must be a string.' });
+  }
+
+  try {
+    const user = await userService.updateUser(req.user.id, { name, email, avatar_url });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+    res.json({ user });
+  } catch (err) {
+    if (err.code === 'EMAIL_TAKEN') {
+      return res.status(409).json({ error: 'An account with this email already exists.' });
+    }
+    console.error('Update profile error:', err);
+    return res.status(500).json({ error: 'Could not update profile.' });
   }
 };

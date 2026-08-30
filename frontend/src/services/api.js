@@ -53,8 +53,16 @@ export const api = {
 
   me: (token) => request('/auth/me', { token }),
 
-  updateProfile: (token, { name, email }) =>
-    request('/auth/me', { method: 'PATCH', body: { name, email }, token }),
+  updateProfile: (token, { name, email, avatar_url }) =>
+    request('/auth/me', {
+      method: 'PATCH',
+      body: { name, email, avatar_url },
+      token,
+    }),
+
+  // Uploads a base64 data URI (or remote URL) to Cloudinary via the backend.
+  uploadAsset: (token, dataUri) =>
+    request('/upload', { method: 'POST', body: { file: dataUri }, token }),
 
   listCommunities: (token, { search, location } = {}) => {
     const params = new URLSearchParams();
@@ -72,34 +80,31 @@ export const api = {
   leaveCommunity: (token, id) =>
     request(`/communities/${id}/leave`, { method: 'DELETE', token }),
 
-  // Discussion endpoints
+  // Group discussion (post) endpoints
   listDiscussions: (token, communityId) =>
-    request(`/communities/${communityId}/discussions`, { token }),
+    request(`/groups/${communityId}/posts`, { token }),
 
   getDiscussion: (token, communityId, discussionId) =>
-    request(`/communities/${communityId}/discussions/${discussionId}`, { token }),
+    request(`/groups/${communityId}/posts/${discussionId}`, { token }),
 
   createDiscussion: (token, communityId, { title, content }) =>
-    request(`/communities/${communityId}/discussions`, {
+    request(`/groups/${communityId}/posts`, {
       method: 'POST',
       body: { title, content },
       token,
     }),
 
-  deleteDiscussion: (token, communityId, discussionId) =>
-    request(`/communities/${communityId}/discussions/${discussionId}`, {
-      method: 'DELETE',
+  // Post/comment (discussion reply) endpoints
+  addComment: (token, postId, content) =>
+    request(`/groups/${postId}/comments`, {
+      method: 'POST',
+      body: { content },
       token,
     }),
 
-  // Comment endpoints
-  listComments: (token, discussionId) =>
-    request(`/discussions/${discussionId}/comments`, { token }),
-
-  createComment: (token, discussionId, { content }) =>
-    request(`/discussions/${discussionId}/comments`, {
-      method: 'POST',
-      body: { content },
+  deleteComment: (token, postId, commentId) =>
+    request(`/groups/${postId}/comments/${commentId}`, {
+      method: 'DELETE',
       token,
     }),
 };

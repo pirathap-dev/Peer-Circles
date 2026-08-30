@@ -127,10 +127,6 @@ export default function CommunityDetailsScreen() {
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
         <View style={styles.disclaimer}>
-          <Text style={styles.disclaimerText}>
-            This platform provides peer support and community connection. It is not a substitute for
-            professional mental-health care.
-          </Text>
         </View>
       </ScrollView>
     </SafeAreaView>

@@ -58,7 +58,7 @@ export default function CreateDiscussionScreen() {
         style={styles.flex}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
@@ -103,6 +103,20 @@ export default function CreateDiscussionScreen() {
                 <Text style={styles.guidelineItem}>• Maintain confidentiality</Text>
                 <Text style={styles.guidelineItem}>• Avoid giving professional medical advice</Text>
               </View>
+              <Button
+                label="Post Discussion"
+                onPress={handleSubmit}
+                loading={loading}
+                disabled={loading}
+                style={styles.submitButton}
+              />
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+}
 
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.background },
@@ -184,17 +198,3 @@ const styles = StyleSheet.create({
   },
   submitButton: { marginTop: spacing.sm },
 });
-              <Button
-                label="Post Discussion"
-                onPress={handleSubmit}
-                loading={loading}
-                disabled={loading}
-                style={styles.submitButton}
-              />
-            </View>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
-  );
-}

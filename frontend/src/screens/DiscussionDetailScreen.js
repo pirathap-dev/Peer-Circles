@@ -38,7 +38,7 @@ export default function DiscussionDetailScreen() {
     async (isRefresh = false) => {
       try {
         setError('');
-        const data = await api.getDiscussion(token, discussionId);
+        const data = await api.getDiscussion(token, communityId, discussionId);
         setDiscussion(data.discussion);
         setComments(data.comments || []);
       } catch (err) {
@@ -48,7 +48,7 @@ export default function DiscussionDetailScreen() {
         if (isRefresh) setRefreshing(false);
       }
     },
-    [token, discussionId]
+    [token, communityId, discussionId]
   );
 
   useEffect(() => {
@@ -159,10 +159,7 @@ export default function DiscussionDetailScreen() {
           )}
 
           <View style={styles.disclaimer}>
-            <Text style={styles.disclaimerText}>
-              This platform provides peer support and community connection. It is not a substitute for
-              professional mental-health care.
-            </Text>
+         
           </View>
         </ScrollView>
 

@@ -18,5 +18,20 @@ router.post(
   authRequired,
   groupDiscussionController.createGroupPost
 );
+router.get(
+  '/groups/:id/posts/:postId',
+  authRequired,
+  groupDiscussionController.getGroupPost
+);
+router.post(
+  '/groups/:postId/comments',
+  authRequired,
+  groupDiscussionController.createComment
+);
+router.delete(
+  '/groups/:postId/comments/:commentId',
+  authRequired,
+  groupDiscussionController.deleteComment
+);
 
 module.exports = router;

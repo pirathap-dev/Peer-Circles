@@ -13,6 +13,7 @@ export default function Button({
 }) {
   const isPrimary = variant === 'primary';
   const isOutline = variant === 'outline';
+  const isDanger = variant === 'danger';
 
   return (
     <TouchableOpacity
@@ -23,18 +24,20 @@ export default function Button({
         styles.base,
         isPrimary && styles.primary,
         isOutline && styles.outline,
+        isDanger && styles.danger,
         (disabled || loading) && styles.disabled,
         style,
       ]}
     >
       {loading ? (
-        <ActivityIndicator color={isPrimary ? '#FFFFFF' : colors.primary} />
+        <ActivityIndicator color={isPrimary || isDanger ? '#FFFFFF' : colors.primary} />
       ) : (
         <Text
           style={[
             styles.label,
             isPrimary && styles.labelPrimary,
             isOutline && styles.labelOutline,
+            isDanger && styles.labelDanger,
             textStyle,
           ]}
         >
@@ -66,6 +69,14 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: colors.primary,
   },
+  danger: {
+    backgroundColor: colors.error,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 3,
+  },
   disabled: {
     opacity: 0.6,
   },
@@ -76,4 +87,5 @@ const styles = StyleSheet.create({
   },
   labelPrimary: { color: '#FFFFFF' },
   labelOutline: { color: colors.primary },
+  labelDanger: { color: '#FFFFFF' },
 });

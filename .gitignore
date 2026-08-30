@@ -1,11 +1,7 @@
 # Dependencies
 node_modules/
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> origin/PC-67-database-integration-implement-discussion-comments
-# Environment variables
+# Environment variables (secrets — never commit)
 .env
 .env.local
 .env.example
@@ -31,26 +27,10 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-
-# OS files
-.DS_Store
-Thumbs.db
-<<<<<<< HEAD
-=======
-=======
->>>>>>> origin/PC-67-database-integration-implement-discussion-comments
-# Environment files
-.env
-.env.*
-
-# Logs
 *.log
 
 # OS and editor files
 .DS_Store
 Thumbs.db
 .vscode/
-<<<<<<< HEAD
->>>>>>> origin/PC-66-backend-implement-discussion-comment-api
-=======
->>>>>>> origin/PC-67-database-integration-implement-discussion-comments
+.idea/

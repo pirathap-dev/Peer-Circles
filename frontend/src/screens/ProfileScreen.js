@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet, SafeAreaView, Alert } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, SafeAreaView, Alert, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { colors, spacing } from '../config';
 import { useAuth } from '../context/AuthContext';
@@ -43,9 +43,13 @@ export default function ProfileScreen() {
     <SafeAreaView style={styles.flex}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.headerCard}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{getInitials(user?.name)}</Text>
-          </View>
+          {user?.avatar_url ? (
+            <Image source={{ uri: user.avatar_url }} style={styles.avatar} />
+          ) : (
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{getInitials(user?.name)}</Text>
+            </View>
+          )}
           <Text style={styles.name}>{user?.name || 'Your profile'}</Text>
           <Text style={styles.email}>{user?.email}</Text>
           {joined ? <Text style={styles.joined}>Member since {joined}</Text> : null}
@@ -64,25 +68,24 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        <Button
-          label="Edit profile"
-          variant="outline"
-          onPress={() => navigation.navigate('EditProfile')}
-          style={styles.editBtn}
-        />
+        <View style={styles.buttonRow}>
+          <Button
+            label="Edit profile"
+            variant="primary"
+            onPress={() => navigation.navigate('EditProfile')}
+            style={styles.buttonHalf}
+          />
 
-        <Button
-          label="Sign out"
-          variant="outline"
-          onPress={handleLogout}
-          style={styles.signOutBtn}
-        />
+          <Button
+            label="Sign out"
+            variant="danger"
+            onPress={handleLogout}
+            style={styles.buttonHalf}
+          />
+        </View>
 
         <View style={styles.disclaimer}>
-          <Text style={styles.disclaimerText}>
-            This platform provides peer support and community connection. It is not a substitute for
-            professional mental-health care.
-          </Text>
+        
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -166,8 +169,14 @@ const styles = StyleSheet.create({
     fontFamily: 'System',
     fontWeight: '600',
   },
-  editBtn: { marginBottom: spacing.sm },
-  signOutBtn: { marginBottom: spacing.lg },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
+  },
+  buttonHalf: {
+    flex: 1,
+  },
   disclaimer: {
     borderTopWidth: 1,
     borderTopColor: colors.border,
