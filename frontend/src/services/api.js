@@ -74,11 +74,23 @@ export const api = {
 
   getCommunity: (token, id) => request(`/communities/${id}`, { token }),
 
-  joinCommunity: (token, id) =>
-    request(`/communities/${id}/join`, { method: 'POST', token }),
+  joinCommunity: (token, id, { anonymous = false } = {}) =>
+    request(`/communities/${id}/join`, {
+      method: 'POST',
+      body: { anonymous },
+      token,
+    }),
 
   leaveCommunity: (token, id) =>
     request(`/communities/${id}/leave`, { method: 'DELETE', token }),
+
+  // Update the anonymous preference for an existing membership
+  setMembershipAnonymous: (token, id, anonymous) =>
+    request(`/communities/${id}/anonymous`, {
+      method: 'PATCH',
+      body: { anonymous },
+      token,
+    }),
 
   // Group discussion (post) endpoints
   listDiscussions: (token, communityId) =>
@@ -87,18 +99,18 @@ export const api = {
   getDiscussion: (token, communityId, discussionId) =>
     request(`/groups/${communityId}/posts/${discussionId}`, { token }),
 
-  createDiscussion: (token, communityId, { title, content }) =>
+  createDiscussion: (token, communityId, { title, content, is_anonymous = false }) =>
     request(`/groups/${communityId}/posts`, {
       method: 'POST',
-      body: { title, content },
+      body: { title, content, is_anonymous },
       token,
     }),
 
   // Post/comment (discussion reply) endpoints
-  addComment: (token, postId, content) =>
+  addComment: (token, postId, content, { is_anonymous = false } = {}) =>
     request(`/groups/${postId}/comments`, {
       method: 'POST',
-      body: { content },
+      body: { content, is_anonymous },
       token,
     }),
 

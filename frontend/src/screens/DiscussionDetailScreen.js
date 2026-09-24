@@ -18,6 +18,7 @@ import { useAuth } from '../context/AuthContext';
 import Button from '../components/Button';
 import Loader from '../components/Loader';
 import CommentCard from '../components/CommentCard';
+import AnonymousToggle from '../components/AnonymousToggle';
 
 export default function DiscussionDetailScreen() {
   const navigation = useNavigation();
@@ -28,6 +29,7 @@ export default function DiscussionDetailScreen() {
   const [discussion, setDiscussion] = useState(null);
   const [comments, setComments] = useState([]);
   const [commentText, setCommentText] = useState('');
+  const [commentAnonymous, setCommentAnonymous] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -72,9 +74,12 @@ export default function DiscussionDetailScreen() {
     }
     setSubmitting(true);
     try {
-      const data = await api.addComment(token, discussionId, commentText.trim());
+      const data = await api.addComment(token, discussionId, commentText.trim(), {
+        is_anonymous: commentAnonymous,
+      });
       setComments((prev) => [...prev, data.comment]);
       setCommentText('');
+      // Keep the anonymous preference across replies in the same session
     } catch (err) {
       setCommentError(err.message || 'Could not post comment.');
     } finally {
@@ -101,6 +106,12 @@ export default function DiscussionDetailScreen() {
       Alert.alert('Could not delete', err.message || 'Please try again.');
     }
   }
+
+  // Resolve display info for the original discussion post
+  const postIsAnon = !!discussion?.is_anonymous;
+  const postAuthor = postIsAnon
+    ? discussion?.anon_alias || 'Anonymous'
+    : discussion?.author_name || 'Anonymous';
 
   if (loading) {
     return (
@@ -135,12 +146,40 @@ export default function DiscussionDetailScreen() {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
           }
         >
-          <View style={styles.postCard}>
-            <Text style={styles.author}>{discussion?.author_name || 'Anonymous'}</Text>
+          {/* Original discussion post */}
+          <View style={[styles.postCard, postIsAnon && styles.postCardAnon]}>
+            {/* Author row */}
+            <View style={styles.postAuthorRow}>
+              <View style={[styles.postAvatar, postIsAnon && styles.postAvatarAnon]}>
+                <Text style={postIsAnon ? styles.postAvatarEmoji : styles.postAvatarText}>
+                  {postIsAnon ? '🎭' : (postAuthor[0] || '?').toUpperCase()}
+                </Text>
+              </View>
+              <View style={styles.postAuthorInfo}>
+                <View style={styles.nameRow}>
+                  <Text style={[styles.author, postIsAnon && styles.authorAnon]}>
+                    {postAuthor}
+                  </Text>
+                  {postIsAnon && (
+                    <View style={styles.anonBadge}>
+                      <Text style={styles.anonBadgeText}>Anonymous</Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+            </View>
+
             <Text style={styles.title}>{discussion?.title}</Text>
-            <Text style={styles.body}>{discussion?.body}</Text>
+            <Text style={styles.body}>{discussion?.body ?? discussion?.content}</Text>
+
+            {postIsAnon && (
+              <View style={styles.postAnonFooter}>
+                <Text style={styles.postAnonFooterText}>🔒 This post was shared anonymously</Text>
+              </View>
+            )}
           </View>
 
+          {/* Comments list */}
           <Text style={styles.sectionTitle}>
             {comments.length} {comments.length === 1 ? 'Comment' : 'Comments'}
           </Text>
@@ -158,17 +197,38 @@ export default function DiscussionDetailScreen() {
             ))
           )}
 
-          <View style={styles.disclaimer}>
-         
-          </View>
+          <View style={styles.disclaimer} />
         </ScrollView>
 
+        {/* Comment composer */}
         <View style={styles.composer}>
-          {commentError ? <Text style={styles.commentErrorText}>{commentError}</Text> : null}
+          {/* Anonymous toggle row (compact) */}
+          <View style={styles.composerTopRow}>
+            <AnonymousToggle
+              value={commentAnonymous}
+              onChange={setCommentAnonymous}
+              compact
+            />
+            {commentAnonymous && (
+              <View style={styles.anonPillActive}>
+                <Text style={styles.anonPillText}>🎭 Replying anonymously</Text>
+              </View>
+            )}
+          </View>
+
+          {commentError ? (
+            <Text style={styles.commentErrorText}>{commentError}</Text>
+          ) : null}
+
           <View style={styles.composerRow}>
             <TextInput
-              style={styles.composerInput}
-              placeholder="Write a reply..."
+              style={[
+                styles.composerInput,
+                commentAnonymous && styles.composerInputAnon,
+              ]}
+              placeholder={
+                commentAnonymous ? 'Write an anonymous reply...' : 'Write a reply...'
+              }
               placeholderTextColor={colors.textMuted}
               value={commentText}
               onChangeText={setCommentText}
@@ -200,6 +260,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     fontFamily: 'System',
   },
+
+  // ── Post card ──────────────────────────────────────────────────────────
   postCard: {
     backgroundColor: colors.surface,
     borderWidth: 1,
@@ -208,12 +270,71 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     marginBottom: spacing.lg,
   },
+  postCardAnon: {
+    borderColor: colors.primary + '50',
+    borderLeftWidth: 4,
+    borderLeftColor: colors.primary,
+    backgroundColor: colors.primarySoft + '66',
+  },
+  postAuthorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  postAvatar: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: colors.primarySoft,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.sm,
+  },
+  postAvatarAnon: {
+    backgroundColor: colors.primary + '20',
+    borderWidth: 1.5,
+    borderColor: colors.primary + '50',
+  },
+  postAvatarText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.primaryDark,
+    fontFamily: 'System',
+  },
+  postAvatarEmoji: {
+    fontSize: 20,
+  },
+  postAuthorInfo: {
+    flex: 1,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
   author: {
     fontSize: 13,
     fontWeight: '600',
     color: colors.primaryDark,
-    marginBottom: 6,
     fontFamily: 'System',
+  },
+  authorAnon: {
+    color: colors.primary,
+    fontStyle: 'italic',
+  },
+  anonBadge: {
+    backgroundColor: colors.primary,
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  anonBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    fontFamily: 'System',
+    letterSpacing: 0.3,
   },
   title: {
     fontSize: 20,
@@ -228,6 +349,20 @@ const styles = StyleSheet.create({
     lineHeight: 23,
     fontFamily: 'System',
   },
+  postAnonFooter: {
+    marginTop: spacing.md,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.primary + '30',
+  },
+  postAnonFooterText: {
+    fontSize: 12,
+    color: colors.primaryDark,
+    fontFamily: 'System',
+    fontStyle: 'italic',
+  },
+
+  // ── Comments section ───────────────────────────────────────────────────
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
@@ -247,18 +382,32 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
     marginTop: spacing.lg,
   },
-  disclaimerText: {
-    fontSize: 12,
-    color: colors.textMuted,
-    textAlign: 'center',
-    lineHeight: 18,
-    fontFamily: 'System',
-  },
+
+  // ── Composer ───────────────────────────────────────────────────────────
   composer: {
     borderTopWidth: 1,
     borderTopColor: colors.border,
     backgroundColor: colors.background,
     padding: spacing.md,
+    paddingBottom: Platform.OS === 'ios' ? spacing.md : spacing.sm,
+  },
+  composerTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+    justifyContent: 'space-between',
+  },
+  anonPillActive: {
+    backgroundColor: colors.primary,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  anonPillText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    fontFamily: 'System',
   },
   commentErrorText: {
     color: colors.error,
@@ -284,6 +433,10 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontFamily: 'System',
     marginRight: 10,
+  },
+  composerInputAnon: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primarySoft,
   },
   postBtn: { width: 80 },
 });
