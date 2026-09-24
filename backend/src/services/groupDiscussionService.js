@@ -9,8 +9,10 @@ async function getGroupPosts(communityId) {
        p.user_id,
        p.title,
        p.content,
+       p.is_anonymous,
+       p.anon_alias,
        p.created_at,
-       u.name AS author_name
+       CASE WHEN p.is_anonymous = TRUE THEN NULL ELSE u.name END AS author_name
      FROM posts p
      JOIN users u ON u.id = p.user_id
      WHERE p.community_id = $1
@@ -27,28 +29,44 @@ async function createGroupPost({
   userId,
   communityId,
   title,
-  content
+  content,
+  isAnonymous,
+  anonAlias
 }) {
   const result = await db.query(
     `INSERT INTO posts
-      (community_id, user_id, title, content)
-     VALUES ($1, $2, $3, $4)
+      (community_id, user_id, title, content, is_anonymous, anon_alias)
+     VALUES ($1, $2, $3, $4, $5, $6)
      RETURNING
        id,
        community_id,
        user_id,
        title,
        content,
+       is_anonymous,
+       anon_alias,
        created_at`,
     [
       communityId,
       userId,
       title,
-      content
+      content,
+      isAnonymous,
+      anonAlias
     ]
   );
 
-  return result.rows[0];
+  const post = result.rows[0];
+  let author_name = null;
+  if (!isAnonymous) {
+    const author = await db.query('SELECT name FROM users WHERE id = $1', [userId]);
+    author_name = author.rows[0] ? author.rows[0].name : null;
+  }
+
+  return {
+    ...post,
+    author_name
+  };
 }
 
 // Get a single post (with author) within a specific group
@@ -60,8 +78,10 @@ async function getGroupPost(communityId, postId) {
        p.user_id,
        p.title,
        p.content,
+       p.is_anonymous,
+       p.anon_alias,
        p.created_at,
-       u.name AS author_name
+       CASE WHEN p.is_anonymous = TRUE THEN NULL ELSE u.name END AS author_name
      FROM posts p
      JOIN users u ON u.id = p.user_id
      WHERE p.id = $1
@@ -80,8 +100,10 @@ async function getComments(postId) {
        c.post_id,
        c.user_id,
        c.content,
+       c.is_anonymous,
+       c.anon_alias,
        c.created_at,
-       u.name AS author_name
+       CASE WHEN c.is_anonymous = TRUE THEN NULL ELSE u.name END AS author_name
      FROM comments c
      JOIN users u ON u.id = c.user_id
      WHERE c.post_id = $1
@@ -93,31 +115,33 @@ async function getComments(postId) {
 }
 
 // Create a comment on a post
-async function createComment({ userId, postId, content }) {
+async function createComment({ userId, postId, content, isAnonymous, anonAlias }) {
   const result = await db.query(
     `INSERT INTO comments
-       (post_id, user_id, content)
-     VALUES ($1, $2, $3)
+       (post_id, user_id, content, is_anonymous, anon_alias)
+     VALUES ($1, $2, $3, $4, $5)
      RETURNING
        id,
        post_id,
        user_id,
        content,
+       is_anonymous,
+       anon_alias,
        created_at`,
-    [postId, userId, content.trim()]
+    [postId, userId, content.trim(), isAnonymous, anonAlias]
   );
 
   const comment = result.rows[0];
 
-  // Attach the author name so the client can render it directly.
-  const author = await db.query(
-    'SELECT name FROM users WHERE id = $1',
-    [userId]
-  );
+  let author_name = null;
+  if (!isAnonymous) {
+    const author = await db.query('SELECT name FROM users WHERE id = $1', [userId]);
+    author_name = author.rows[0] ? author.rows[0].name : 'Anonymous';
+  }
 
   return {
     ...comment,
-    author_name: author.rows[0] ? author.rows[0].name : 'Anonymous'
+    author_name
   };
 }
 

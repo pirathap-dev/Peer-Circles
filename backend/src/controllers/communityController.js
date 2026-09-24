@@ -35,11 +35,16 @@ exports.getCommunity = async (req, res) => {
     }
 
     let isMember = false;
+    let memberAnonymous = false;
     if (req.user) {
-      isMember = await communityService.isMember(req.user.id, id);
+      const membership = await communityService.getMembership(req.user.id, id);
+      if (membership) {
+        isMember = true;
+        memberAnonymous = membership.anonymous;
+      }
     }
 
-    res.json({ community: { ...community, is_member: isMember } });
+    res.json({ community: { ...community, is_member: isMember, member_anonymous: memberAnonymous } });
   } catch (err) {
     console.error('Get community error:', err);
     res.status(500).json({ error: 'Could not load community.' });
@@ -50,8 +55,13 @@ exports.getCommunity = async (req, res) => {
 exports.joinCommunity = async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
-    const community = await communityService.joinCommunity(req.user.id, id);
-    res.json({ message: 'Joined community.', community });
+    let { anonymous } = req.body;
+    if (anonymous !== undefined && typeof anonymous !== 'boolean') {
+      return res.status(400).json({ error: 'anonymous field must be a boolean.' });
+    }
+    anonymous = anonymous || false;
+    const community = await communityService.joinCommunity(req.user.id, id, anonymous);
+    res.json({ message: 'Joined community.', community: { ...community, is_member: true } });
   } catch (err) {
     if (err.code === 'COMMUNITY_NOT_FOUND') {
       return res.status(404).json({ error: 'Community not found.' });
@@ -77,5 +87,28 @@ exports.leaveCommunity = async (req, res) => {
     }
     console.error('Leave community error:', err);
     return res.status(500).json({ error: 'Could not leave community.' });
+  }
+};
+
+// Update membership anonymity preference
+exports.setMembershipAnonymous = async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id) || id <= 0) {
+      return res.status(400).json({ error: 'Invalid community ID.' });
+    }
+    const { anonymous } = req.body;
+    if (typeof anonymous !== 'boolean') {
+      return res.status(400).json({ error: 'anonymous field must be a boolean.' });
+    }
+    const membership = await communityService.getMembership(req.user.id, id);
+    if (!membership) {
+      return res.status(403).json({ error: 'You must be a member to update this preference.' });
+    }
+    await communityService.setMembershipAnonymous(req.user.id, id, anonymous);
+    res.json({ message: 'Anonymity preference updated.', anonymous });
+  } catch (err) {
+    console.error('Update anonymity preference error:', err);
+    res.status(500).json({ error: 'Could not update preference.' });
   }
 };
