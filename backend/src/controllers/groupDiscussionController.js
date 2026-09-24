@@ -1,5 +1,6 @@
 const groupDiscussionService = require('../services/groupDiscussionService');
 const db = require('../config/db');
+const { generateAnonAlias } = require('../utils/anonAlias');
 
 // Get posts for a specific group
 exports.getGroupPosts = async (req, res) => {
@@ -70,6 +71,13 @@ exports.createGroupPost = async (req, res) => {
     const userId = req.user.id;
     const communityId = Number(req.params.id);
     const { title, content } = req.body;
+    let { is_anonymous } = req.body;
+
+    if (is_anonymous !== undefined && typeof is_anonymous !== 'boolean') {
+      return res.status(400).json({ error: 'is_anonymous must be a boolean.' });
+    }
+    is_anonymous = is_anonymous || false;
+    const anonAlias = is_anonymous ? generateAnonAlias() : null;
 
     if (!Number.isInteger(communityId)) {
       return res.status(400).json({ error: 'Invalid group ID.' });
@@ -121,7 +129,9 @@ exports.createGroupPost = async (req, res) => {
       userId,
       communityId,
       title: title.trim(),
-      content: content.trim()
+      content: content.trim(),
+      isAnonymous: is_anonymous,
+      anonAlias
     });
 
     return res.status(201).json({
@@ -179,6 +189,13 @@ exports.createComment = async (req, res) => {
     const userId = req.user.id;
     const postId = Number(req.params.postId);
     const { content } = req.body;
+    let { is_anonymous } = req.body;
+
+    if (is_anonymous !== undefined && typeof is_anonymous !== 'boolean') {
+      return res.status(400).json({ error: 'is_anonymous must be a boolean.' });
+    }
+    is_anonymous = is_anonymous || false;
+    const anonAlias = is_anonymous ? generateAnonAlias() : null;
 
     if (!Number.isInteger(postId)) {
       return res.status(400).json({ error: 'Invalid discussion ID.' });
@@ -220,7 +237,9 @@ exports.createComment = async (req, res) => {
     const comment = await groupDiscussionService.createComment({
       userId,
       postId,
-      content
+      content,
+      isAnonymous: is_anonymous,
+      anonAlias
     });
 
     return res.status(201).json({ comment });

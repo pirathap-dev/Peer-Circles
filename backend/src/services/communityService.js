@@ -30,15 +30,20 @@ async function getCommunityById(id) {
   return result.rows[0] || null;
 }
 
-async function isMember(userId, communityId) {
+async function getMembership(userId, communityId) {
   const result = await db.query(
-    'SELECT 1 FROM community_members WHERE user_id = $1 AND community_id = $2',
+    'SELECT anonymous FROM community_members WHERE user_id = $1 AND community_id = $2',
     [userId, communityId]
   );
-  return result.rowCount > 0;
+  return result.rows[0] || null;
 }
 
-async function joinCommunity(userId, communityId) {
+async function isMember(userId, communityId) {
+  const membership = await getMembership(userId, communityId);
+  return !!membership;
+}
+
+async function joinCommunity(userId, communityId, anonymous = false) {
   const exists = await getCommunityById(communityId);
   if (!exists) {
     const error = new Error('COMMUNITY_NOT_FOUND');
@@ -54,8 +59,8 @@ async function joinCommunity(userId, communityId) {
   }
 
   await db.query(
-    'INSERT INTO community_members (user_id, community_id) VALUES ($1, $2)',
-    [userId, communityId]
+    'INSERT INTO community_members (user_id, community_id, anonymous) VALUES ($1, $2, $3)',
+    [userId, communityId, anonymous]
   );
   await db.query(
     'UPDATE communities SET member_count = member_count + 1 WHERE id = $1',
@@ -91,6 +96,14 @@ async function getJoinedCommunityIds(userId) {
   return result.rows.map((row) => row.community_id);
 }
 
+async function setMembershipAnonymous(userId, communityId, anonymous) {
+  const result = await db.query(
+    'UPDATE community_members SET anonymous = $1 WHERE user_id = $2 AND community_id = $3 RETURNING *',
+    [anonymous, userId, communityId]
+  );
+  return result.rowCount > 0;
+}
+
 module.exports = {
   listCommunities,
   getCommunityById,
@@ -98,4 +111,6 @@ module.exports = {
   leaveCommunity,
   isMember,
   getJoinedCommunityIds,
+  getMembership,
+  setMembershipAnonymous,
 };
