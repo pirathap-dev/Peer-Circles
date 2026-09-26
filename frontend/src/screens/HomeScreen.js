@@ -126,23 +126,34 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.flex}>
       <View style={styles.container}>
-        <TouchableOpacity
-          onPress={() => navigation.navigate('Profile')}
-          style={styles.topBar}
-          activeOpacity={0.7}
-        >
-          {user?.avatar_url ? (
-            <Image source={{ uri: user.avatar_url }} style={styles.avatar} />
-          ) : (
-            <View style={[styles.avatar, styles.avatarFallback]}>
-              <Text style={styles.avatarText}>{getInitials(user?.name)}</Text>
+        <View style={styles.topBar}>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Profile')}
+            style={styles.topBarLeft}
+            activeOpacity={0.7}
+          >
+            {user?.avatar_url ? (
+              <Image source={{ uri: user.avatar_url }} style={styles.avatar} />
+            ) : (
+              <View style={[styles.avatar, styles.avatarFallback]}>
+                <Text style={styles.avatarText}>{getInitials(user?.name)}</Text>
+              </View>
+            )}
+            <View style={styles.topBarText}>
+              <Text style={styles.welcome}>Welcome, {user?.name?.split(' ')[0] || 'friend'}</Text>
+              <Text style={styles.subhead}>Find your support group</Text>
             </View>
-          )}
-          <View style={styles.topBarText}>
-            <Text style={styles.welcome}>Welcome, {user?.name?.split(' ')[0] || 'friend'}</Text>
-            <Text style={styles.subhead}>Find your support group</Text>
-          </View>
-        </TouchableOpacity>
+          </TouchableOpacity>
+
+          {/* Messages inbox button */}
+          <TouchableOpacity
+            onPress={() => navigation.navigate('MessagesInbox')}
+            style={styles.messagesBtn}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.messagesBtnIcon}>💬</Text>
+          </TouchableOpacity>
+        </View>
 
         <View style={styles.searchBox}>
           <TextInput
@@ -221,11 +232,29 @@ const styles = StyleSheet.create({
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
     marginBottom: spacing.md,
+  },
+  topBarLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
   },
   topBarText: {
     flex: 1,
+  },
+  messagesBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.primarySoft,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: colors.primary + '40',
+  },
+  messagesBtnIcon: {
+    fontSize: 22,
   },
   welcome: {
     fontSize: 24,

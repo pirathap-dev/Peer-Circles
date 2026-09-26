@@ -14,6 +14,9 @@ import EditProfileScreen from '../screens/EditProfileScreen';
 import DiscussionListScreen from '../screens/DiscussionListScreen';
 import CreateDiscussionScreen from '../screens/CreateDiscussionScreen';
 import DiscussionDetailScreen from '../screens/DiscussionDetailScreen';
+import MessagesInboxScreen from '../screens/MessagesInboxScreen';
+import ConversationScreen from '../screens/ConversationScreen';
+import MemberProfileScreen from '../screens/MemberProfileScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -71,6 +74,21 @@ export default function AppNavigator() {
               name="EditProfile"
               component={EditProfileScreen}
               options={{ title: 'Edit Profile' }}
+            />
+            <Stack.Screen
+              name="MessagesInbox"
+              component={MessagesInboxScreen}
+              options={{ title: 'Messages' }}
+            />
+            <Stack.Screen
+              name="Conversation"
+              component={ConversationScreen}
+              options={{ title: 'Chat' }}
+            />
+            <Stack.Screen
+              name="MemberProfile"
+              component={MemberProfileScreen}
+              options={{ title: 'Member' }}
             />
           </>
         ) : (

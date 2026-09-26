@@ -119,4 +119,36 @@ export const api = {
       method: 'DELETE',
       token,
     }),
+
+  // ── Private messaging endpoints ──────────────────────────────────────
+  // GET /messages/conversations  → { conversations: [...] }
+  getConversations: (token) =>
+    request('/messages/conversations', { token }),
+
+  // GET /messages/:conversationId  → { messages: [...] }
+  getMessages: (token, conversationId) =>
+    request(`/messages/${conversationId}`, { token }),
+
+  // POST /messages  → { message: {...} }
+  // body: { conversation_id, content }
+  sendMessage: (token, conversationId, content) =>
+    request('/messages', {
+      method: 'POST',
+      body: { conversation_id: conversationId, content },
+      token,
+    }),
+
+  // POST /messages/conversations  → { conversation: {...} }
+  // Used to start a brand-new conversation with a user.
+  // body: { recipient_id }
+  startConversation: (token, recipientId) =>
+    request('/messages/conversations', {
+      method: 'POST',
+      body: { recipient_id: recipientId },
+      token,
+    }),
+
+  // DELETE /messages/:messageId  → { success: true }
+  deleteMessage: (token, messageId) =>
+    request(`/messages/${messageId}`, { method: 'DELETE', token }),
 };
