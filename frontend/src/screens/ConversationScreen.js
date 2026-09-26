@@ -52,6 +52,7 @@ function groupMessages(messages) {
   return items;
 }
 
+//test
 function formatDayLabel(d) {
   const now = new Date();
   const isToday =
