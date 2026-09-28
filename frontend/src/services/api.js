@@ -60,6 +60,15 @@ export const api = {
       token,
     }),
 
+  getPrivacySettings: (token) => request('/auth/privacy', { token }),
+
+  updatePrivacySettings: (token, settings) =>
+    request('/auth/privacy', {
+      method: 'PATCH',
+      body: settings,
+      token,
+    }),
+
   // Uploads a base64 data URI (or remote URL) to Cloudinary via the backend.
   uploadAsset: (token, dataUri) =>
     request('/upload', { method: 'POST', body: { file: dataUri }, token }),

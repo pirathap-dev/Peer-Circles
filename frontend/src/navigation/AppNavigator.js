@@ -17,6 +17,7 @@ import DiscussionDetailScreen from '../screens/DiscussionDetailScreen';
 import MessagesInboxScreen from '../screens/MessagesInboxScreen';
 import ConversationScreen from '../screens/ConversationScreen';
 import MemberProfileScreen from '../screens/MemberProfileScreen';
+import PrivacySettingsScreen from '../screens/PrivacySettingsScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -74,6 +75,11 @@ export default function AppNavigator() {
               name="EditProfile"
               component={EditProfileScreen}
               options={{ title: 'Edit Profile' }}
+            />
+            <Stack.Screen
+              name="PrivacySettings"
+              component={PrivacySettingsScreen}
+              options={{ title: 'Privacy Settings' }}
             />
             <Stack.Screen
               name="MessagesInbox"
