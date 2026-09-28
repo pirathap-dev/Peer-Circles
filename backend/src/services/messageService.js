@@ -2,7 +2,7 @@ const db = require('../config/db');
 
 async function resolveOtherUser(otherUserId, requestingUserId) {
   const userQuery = `
-    SELECT id, name, avatar_url
+    SELECT id, name, avatar_url, make_profile_private
     FROM users
     WHERE id = $1
   `;
@@ -31,12 +31,23 @@ async function resolveOtherUser(otherUserId, requestingUserId) {
   let name = user.name;
   let avatar_url = user.avatar_url || null;
 
-  if (anonRes.rowCount > 0 && anonRes.rows[0].anonymous === true) {
-    is_anonymous = true;
-    anon_alias = anonRes.rows[0].anon_alias;
-    display_name = anon_alias;
-    name = null;
-    avatar_url = null;
+  const sharesGroup = anonRes.rowCount > 0;
+
+  if (sharesGroup) {
+    if (anonRes.rows[0].anonymous === true) {
+      is_anonymous = true;
+      anon_alias = anonRes.rows[0].anon_alias;
+      display_name = anon_alias;
+      name = null;
+      avatar_url = null;
+    }
+  } else {
+    // They do not share a group.
+    if (user.make_profile_private) {
+      name = null;
+      avatar_url = null;
+      display_name = 'Private User';
+    }
   }
 
   return {
@@ -153,6 +164,14 @@ async function sendMessage({ conversationId, senderId, content }) {
   const conv = convRes.rows[0];
   if (conv.user_a_id !== senderId && conv.user_b_id !== senderId) {
     const error = new Error('You do not have access to this conversation.');
+    error.code = 'FORBIDDEN';
+    throw error;
+  }
+
+  const recipientId = conv.user_a_id === senderId ? conv.user_b_id : conv.user_a_id;
+  const privacyRes = await db.query(`SELECT allow_private_messages FROM users WHERE id = $1`, [recipientId]);
+  if (privacyRes.rowCount > 0 && privacyRes.rows[0].allow_private_messages === false) {
+    const error = new Error('This user does not accept private messages.');
     error.code = 'FORBIDDEN';
     throw error;
   }

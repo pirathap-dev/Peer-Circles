@@ -8,5 +8,7 @@ router.post('/register', authController.register);
 router.post('/login', authController.login);
 router.get('/me', authRequired, authController.me);
 router.patch('/me', authRequired, authController.updateMe);
+router.get('/privacy', authRequired, authController.getPrivacy);
+router.patch('/privacy', authRequired, authController.updatePrivacy);
 
 module.exports = router;
