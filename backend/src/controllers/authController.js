@@ -94,3 +94,39 @@ exports.updateMe = async (req, res) => {
     return res.status(500).json({ error: 'Could not update profile.' });
   }
 };
+
+exports.getPrivacy = async (req, res) => {
+  try {
+    const settings = await userService.getPrivacySettings(req.user.id);
+    if (!settings) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+    res.json(settings);
+  } catch (err) {
+    console.error('Get privacy error:', err);
+    return res.status(500).json({ error: 'Could not load privacy settings.' });
+  }
+};
+
+exports.updatePrivacy = async (req, res) => {
+  const { allow_private_messages, show_online_status, make_profile_private } = req.body;
+
+  if (typeof allow_private_messages !== 'boolean' || typeof show_online_status !== 'boolean' || typeof make_profile_private !== 'boolean') {
+    return res.status(400).json({ error: 'Privacy settings must be boolean values.' });
+  }
+
+  try {
+    const settings = await userService.updatePrivacySettings(req.user.id, {
+      allow_private_messages,
+      show_online_status,
+      make_profile_private,
+    });
+    if (!settings) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+    res.json(settings);
+  } catch (err) {
+    console.error('Update privacy error:', err);
+    return res.status(500).json({ error: 'Could not update privacy settings.' });
+  }
+};

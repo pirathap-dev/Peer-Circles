@@ -23,6 +23,12 @@ exports.startConversation = async (req, res) => {
       return res.status(400).json({ error: 'Cannot start a conversation with yourself.' });
     }
 
+    const userService = require('../services/userService');
+    const privacySettings = await userService.getPrivacySettings(recipientId);
+    if (privacySettings && privacySettings.allow_private_messages === false) {
+      return res.status(403).json({ error: 'This user does not accept private messages.' });
+    }
+
     let other_user;
     try {
       other_user = await messageService.resolveOtherUser(recipientId, userId);
