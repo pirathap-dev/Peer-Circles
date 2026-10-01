@@ -19,7 +19,15 @@ export default function EducationalResourcesScreen() {
     try {
       setError('');
       const data = await api.getResources(token);
-      setResources(data.resources || []);
+      const items = Array.isArray(data.resources) ? data.resources : [];
+      setResources(items.map((resource) => ({
+        ...resource,
+        id: String(resource.id),
+        title: resource.title || 'Untitled resource',
+        description: resource.description || '',
+        content: resource.content || '',
+        url: resource.url || '',
+      })));
     } catch (err) {
       setError(err.message || 'Could not load resources.');
     } finally {
@@ -68,6 +76,7 @@ export default function EducationalResourcesScreen() {
         )}
       </View>
       {item.description ? <Text style={styles.description}>{item.description}</Text> : null}
+      {item.content ? <Text style={styles.content}>{item.content}</Text> : null}
       
       {item.url ? (
         <Text style={styles.linkText}>Read more →</Text>
@@ -163,6 +172,13 @@ const styles = StyleSheet.create({
   description: {
     fontSize: 14,
     color: colors.textMuted,
+    lineHeight: 20,
+    fontFamily: 'System',
+    marginBottom: 12,
+  },
+  content: {
+    fontSize: 14,
+    color: colors.text,
     lineHeight: 20,
     fontFamily: 'System',
     marginBottom: 12,
