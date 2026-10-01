@@ -160,4 +160,9 @@ export const api = {
   // DELETE /messages/:messageId  → { success: true }
   deleteMessage: (token, messageId) =>
     request(`/messages/${messageId}`, { method: 'DELETE', token }),
+
+  // ── Educational Resources endpoints ──────────────────────────────────
+  getResources: (token) => request('/resources', { token }),
+  
+  getResource: (token, id) => request(`/resources/${id}`, { token }),
 };

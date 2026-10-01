@@ -145,14 +145,24 @@ export default function HomeScreen() {
             </View>
           </TouchableOpacity>
 
-          {/* Messages inbox button */}
-          <TouchableOpacity
-            onPress={() => navigation.navigate('MessagesInbox')}
-            style={styles.messagesBtn}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.messagesBtnIcon}>💬</Text>
-          </TouchableOpacity>
+          {/* Action buttons */}
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('EducationalResources')}
+              style={styles.messagesBtn}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.messagesBtnIcon}>📚</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => navigation.navigate('MessagesInbox')}
+              style={styles.messagesBtn}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.messagesBtnIcon}>💬</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.searchBox}>

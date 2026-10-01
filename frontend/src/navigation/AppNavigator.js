@@ -18,6 +18,7 @@ import MessagesInboxScreen from '../screens/MessagesInboxScreen';
 import ConversationScreen from '../screens/ConversationScreen';
 import MemberProfileScreen from '../screens/MemberProfileScreen';
 import PrivacySettingsScreen from '../screens/PrivacySettingsScreen';
+import EducationalResourcesScreen from '../screens/EducationalResourcesScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -95,6 +96,11 @@ export default function AppNavigator() {
               name="MemberProfile"
               component={MemberProfileScreen}
               options={{ title: 'Member' }}
+            />
+            <Stack.Screen
+              name="EducationalResources"
+              component={EducationalResourcesScreen}
+              options={{ title: 'Resources' }}
             />
           </>
         ) : (
