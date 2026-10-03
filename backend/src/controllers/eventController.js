@@ -13,7 +13,7 @@ exports.listEvents = async (req, res) => {
   }
 };
 
-// Get details of a specific event by ID
+// Get details of a specific event by id
 exports.getEvent = async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
@@ -54,21 +54,21 @@ exports.updateEvent = async (req, res) => {
       return res.status(400).json({ error: 'Invalid event ID.' });
     }
     const { title, description, date, location, category } = req.body;
-    
+
     // Quick check if exists
     const existing = await eventService.getEventById(id);
     if (!existing) {
       return res.status(404).json({ error: 'Event not found.' });
     }
 
-    const updatedEvent = await eventService.updateEvent(id, { 
-      title: title !== undefined ? title : existing.title, 
-      description: description !== undefined ? description : existing.description, 
+    const updatedEvent = await eventService.updateEvent(id, {
+      title: title !== undefined ? title : existing.title,
+      description: description !== undefined ? description : existing.description,
       date: date !== undefined ? date : existing.date,
-      location: location !== undefined ? location : existing.location, 
+      location: location !== undefined ? location : existing.location,
       category: category !== undefined ? category : existing.category
     });
-    
+
     res.json({ message: 'Event updated.', event: updatedEvent });
   } catch (err) {
     console.error('Update event error:', err);
