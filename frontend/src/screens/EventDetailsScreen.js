@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, StyleSheet, SafeAreaView } from 'react-native';
 import { useRoute } from '@react-navigation/native';
 import { colors, spacing } from '../config';
@@ -8,9 +8,10 @@ import Loader from '../components/Loader';
 import Button from '../components/Button';
 
 function formatDate(dateString) {
-  if (!dateString) return '';
+  if (!dateString) return 'Date and time unavailable';
   const d = new Date(dateString);
-  return d.toLocaleDateString(undefined, {
+  if (Number.isNaN(d.getTime())) return 'Date and time unavailable';
+  return d.toLocaleString(undefined, {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
@@ -31,24 +32,29 @@ export default function EventDetailsScreen() {
   const [loading, setLoading] = useState(!eventData);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    async function loadEvent() {
-      if (!eventId) return;
-      try {
-        setError('');
-        const data = await api.getEventDetails(token, eventId);
-        setEvent(data.event);
-      } catch (err) {
-        // If we already have eventData, we can just log the error and keep showing what we have.
-        if (!eventData) {
-          setError(err.message || 'Could not load event details.');
-        }
-      } finally {
-        setLoading(false);
-      }
+  const loadEvent = useCallback(async () => {
+    if (!eventId) {
+      if (!eventData) setError('Event not found.');
+      setLoading(false);
+      return;
     }
-    loadEvent();
+
+    try {
+      setError('');
+      if (!eventData) setLoading(true);
+      const data = await api.getEventDetails(token, eventId);
+      if (!data?.event) throw new Error('Event not found.');
+      setEvent(data.event);
+    } catch (err) {
+      setError(err.message || 'Could not load event details.');
+    } finally {
+      setLoading(false);
+    }
   }, [eventId, token, eventData]);
+
+  useEffect(() => {
+    loadEvent();
+  }, [loadEvent]);
 
   if (loading) {
     return (
@@ -63,6 +69,7 @@ export default function EventDetailsScreen() {
       <SafeAreaView style={styles.flex}>
         <View style={styles.centerContent}>
           <Text style={styles.errorText}>{error || 'Event not found'}</Text>
+          <Button label="Try again" onPress={loadEvent} style={styles.retry} />
         </View>
       </SafeAreaView>
     );
@@ -79,6 +86,13 @@ export default function EventDetailsScreen() {
             </View>
           )}
         </View>
+
+        {error ? (
+          <View style={styles.fetchWarning}>
+            <Text style={styles.errorText}>{error}</Text>
+            <Button label="Retry details" onPress={loadEvent} style={styles.retry} />
+          </View>
+        ) : null}
 
         <View style={styles.infoCard}>
           <View style={styles.infoRow}>
@@ -120,6 +134,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     fontFamily: 'System',
+  },
+  retry: { width: 200, marginTop: spacing.md },
+  fetchWarning: {
+    alignItems: 'center',
+    borderColor: colors.error,
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
   },
   header: {
     marginBottom: spacing.xl,

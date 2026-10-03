@@ -11,7 +11,8 @@ import Button from '../components/Button';
 function formatDate(dateString) {
   if (!dateString) return '';
   const d = new Date(dateString);
-  return d.toLocaleDateString(undefined, {
+  if (Number.isNaN(d.getTime())) return 'Date and time unavailable';
+  return d.toLocaleString(undefined, {
     weekday: 'short',
     month: 'short',
     day: 'numeric',
