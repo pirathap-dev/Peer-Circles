@@ -8,6 +8,7 @@
 
 -- Drop in reverse dependency order (useful during development)
 DROP TABLE IF EXISTS notifications CASCADE;
+DROP TABLE IF EXISTS educational_resources CASCADE;
 DROP TABLE IF EXISTS reports CASCADE;
 DROP TABLE IF EXISTS comments CASCADE;
 DROP TABLE IF EXISTS posts CASCADE;
@@ -55,6 +56,22 @@ CREATE TABLE community_members (
 
 CREATE INDEX idx_community_members_user    ON community_members (user_id);
 CREATE INDEX idx_community_members_community ON community_members (community_id);
+
+-- --------------------------------------------------------------------------
+-- educational_resources
+-- --------------------------------------------------------------------------
+CREATE TABLE educational_resources (
+    id          SERIAL PRIMARY KEY,
+    title       VARCHAR(200) NOT NULL,
+    description TEXT,
+    category    VARCHAR(100),
+    content     TEXT,
+    url         VARCHAR(1000),
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT educational_resources_content_or_url CHECK (content IS NOT NULL OR url IS NOT NULL)
+);
+
+CREATE INDEX idx_educational_resources_category ON educational_resources (category);
 
 -- --------------------------------------------------------------------------
 -- posts (architecture for future versions)
