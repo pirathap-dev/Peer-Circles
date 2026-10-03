@@ -13,3 +13,13 @@ INSERT INTO communities (name, description, location) VALUES
     ('Parenting Support', 'Parents connecting with parents to share encouragement and experiences.', 'Jaffna'),
     ('General Peer Support', 'An open community for anyone seeking connection and peer encouragement.', 'Colombo')
 ON CONFLICT DO NOTHING;
+
+INSERT INTO educational_resources (title, description, category, content, url) VALUES
+    ('Managing stress', 'Practical techniques for noticing stress and building small recovery habits.', 'Stress management', 'Try a short breathing exercise, name what is within your control, and choose one manageable next step.', NULL),
+    ('Understanding anxiety', 'A plain-language introduction to anxiety and supportive coping strategies.', 'Anxiety', NULL, 'https://www.nhs.uk/mental-health/conditions/anxiety-disorders/'),
+    ('Getting support', 'Learn when and how to reach out for professional mental health support.', 'Support', NULL, 'https://www.who.int/health-topics/mental-health');
+
+INSERT INTO events (title, description, date, location, category) VALUES
+    ('Mental Health Awareness Workshop', 'An interactive session on recognizing and managing mental health issues.', '2026-10-15T10:00:00Z', 'Colombo Public Library', 'Workshop'),
+    ('Mindfulness and Meditation', 'A guided meditation session to relieve stress and anxiety.', '2026-10-20T17:00:00Z', 'Kandy Vihara Park', 'Meditation'),
+    ('Peer Support Group Meeting', 'A monthly meetup for sharing experiences and getting support.', '2026-11-05T18:00:00Z', 'Online (Zoom)', 'Support Group');
