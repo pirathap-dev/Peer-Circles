@@ -165,4 +165,16 @@ export const api = {
   getResources: (token) => request('/resources', { token }),
   
   getResource: (token, id) => request(`/resources/${id}`, { token }),
+
+  // ── Events endpoints ───────────────────────────────────────────────
+  getEvents: (token, { category, search, upcomingOnly } = {}) => {
+    const params = new URLSearchParams();
+    if (category) params.append('category', category);
+    if (search) params.append('search', search);
+    if (upcomingOnly) params.append('upcomingOnly', 'true');
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    return request(`/events${qs}`, { token });
+  },
+
+  getEventDetails: (token, id) => request(`/events/${id}`, { token }),
 };

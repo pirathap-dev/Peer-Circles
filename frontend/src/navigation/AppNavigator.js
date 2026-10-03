@@ -17,8 +17,9 @@ import DiscussionDetailScreen from '../screens/DiscussionDetailScreen';
 import MessagesInboxScreen from '../screens/MessagesInboxScreen';
 import ConversationScreen from '../screens/ConversationScreen';
 import MemberProfileScreen from '../screens/MemberProfileScreen';
-import PrivacySettingsScreen from '../screens/PrivacySettingsScreen';
 import EducationalResourcesScreen from '../screens/EducationalResourcesScreen';
+import EventsScreen from '../screens/EventsScreen';
+import EventDetailsScreen from '../screens/EventDetailsScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -101,6 +102,16 @@ export default function AppNavigator() {
               name="EducationalResources"
               component={EducationalResourcesScreen}
               options={{ title: 'Resources' }}
+            />
+            <Stack.Screen
+              name="Events"
+              component={EventsScreen}
+              options={{ title: 'Events' }}
+            />
+            <Stack.Screen
+              name="EventDetails"
+              component={EventDetailsScreen}
+              options={{ title: 'Event Details' }}
             />
           </>
         ) : (

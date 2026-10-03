@@ -148,6 +148,14 @@ export default function HomeScreen() {
           {/* Action buttons */}
           <View style={{ flexDirection: 'row', gap: 8 }}>
             <TouchableOpacity
+              onPress={() => navigation.navigate('Events')}
+              style={styles.messagesBtn}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.messagesBtnIcon}>📅</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
               onPress={() => navigation.navigate('EducationalResources')}
               style={styles.messagesBtn}
               activeOpacity={0.7}
