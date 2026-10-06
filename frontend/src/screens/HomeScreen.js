@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { View, Text, TextInput, FlatList, StyleSheet, RefreshControl, SafeAreaView, TouchableOpacity, Alert, Image } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { colors, spacing } from '../config';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -40,6 +40,7 @@ export default function HomeScreen() {
   const [search, setSearch] = useState('');
   const [location, setLocation] = useState('');
   const [pendingId, setPendingId] = useState(null);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const debounceRef = useRef(null);
 
@@ -63,6 +64,23 @@ export default function HomeScreen() {
     loadCommunities(search, location);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      const fetchUnread = async () => {
+        try {
+          const data = await api.getNotifications(token);
+          if (data.notifications) {
+            const count = data.notifications.filter((n) => !n.is_read).length;
+            setUnreadCount(count);
+          }
+        } catch (err) {
+          console.log('Fetch notifications err', err);
+        }
+      };
+      fetchUnread();
+    }, [token])
+  );
 
   useEffect(() => {
     return () => {
@@ -147,6 +165,21 @@ export default function HomeScreen() {
 
           {/* Action buttons */}
           <View style={{ flexDirection: 'row', gap: 8 }}>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('Notifications')}
+              style={styles.messagesBtn}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.messagesBtnIcon}>🔔</Text>
+              {unreadCount > 0 && (
+                <View style={styles.badgeContainer}>
+                  <Text style={styles.badgeText}>
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
             <TouchableOpacity
               onPress={() => navigation.navigate('Events')}
               style={styles.messagesBtn}
@@ -273,6 +306,26 @@ const styles = StyleSheet.create({
   },
   messagesBtnIcon: {
     fontSize: 22,
+  },
+  badgeContainer: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    backgroundColor: colors.error,
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+    borderWidth: 1.5,
+    borderColor: colors.background,
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '700',
+    fontFamily: 'System',
   },
   welcome: {
     fontSize: 24,

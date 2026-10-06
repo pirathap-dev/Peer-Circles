@@ -175,6 +175,11 @@ export const api = {
     const qs = params.toString() ? `?${params.toString()}` : '';
     return request(`/events${qs}`, { token });
   },
-
   getEventDetails: (token, id) => request(`/events/${id}`, { token }),
+
+  // ── Notifications endpoints ──────────────────────────────────────────
+  getNotifications: (token) => request('/notifications', { token }),
+
+  markNotificationAsRead: (token, id) =>
+    request(`/notifications/${id}/read`, { method: 'PUT', token }),
 };

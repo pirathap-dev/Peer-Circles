@@ -20,6 +20,7 @@ import MemberProfileScreen from '../screens/MemberProfileScreen';
 import EducationalResourcesScreen from '../screens/EducationalResourcesScreen';
 import EventsScreen from '../screens/EventsScreen';
 import EventDetailsScreen from '../screens/EventDetailsScreen';
+import NotificationsScreen from '../screens/NotificationsScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -112,6 +113,11 @@ export default function AppNavigator() {
               name="EventDetails"
               component={EventDetailsScreen}
               options={{ title: 'Event Details' }}
+            />
+            <Stack.Screen
+              name="Notifications"
+              component={NotificationsScreen}
+              options={{ title: 'Notifications' }}
             />
           </>
         ) : (
