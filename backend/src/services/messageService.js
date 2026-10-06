@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const notificationService = require('./notificationService');
 
 async function resolveOtherUser(otherUserId, requestingUserId) {
   const userQuery = `
@@ -155,34 +156,49 @@ async function getMessagesForConversation(conversationId, requestingUserId) {
 }
 
 async function sendMessage({ conversationId, senderId, content }) {
-  const convRes = await db.query(`SELECT user_a_id, user_b_id FROM conversations WHERE id = $1`, [conversationId]);
-  if (convRes.rowCount === 0) {
-    const error = new Error('You do not have access to this conversation.');
-    error.code = 'FORBIDDEN';
-    throw error;
-  }
-  const conv = convRes.rows[0];
-  if (conv.user_a_id !== senderId && conv.user_b_id !== senderId) {
-    const error = new Error('You do not have access to this conversation.');
-    error.code = 'FORBIDDEN';
-    throw error;
-  }
+  return db.transaction(async (client) => {
+    const convRes = await client.query(
+      'SELECT user_a_id, user_b_id FROM conversations WHERE id = $1',
+      [conversationId]
+    );
+    if (convRes.rowCount === 0) {
+      const error = new Error('You do not have access to this conversation.');
+      error.code = 'FORBIDDEN';
+      throw error;
+    }
+    const conv = convRes.rows[0];
+    if (conv.user_a_id !== senderId && conv.user_b_id !== senderId) {
+      const error = new Error('You do not have access to this conversation.');
+      error.code = 'FORBIDDEN';
+      throw error;
+    }
 
-  const recipientId = conv.user_a_id === senderId ? conv.user_b_id : conv.user_a_id;
-  const privacyRes = await db.query(`SELECT allow_private_messages FROM users WHERE id = $1`, [recipientId]);
-  if (privacyRes.rowCount > 0 && privacyRes.rows[0].allow_private_messages === false) {
-    const error = new Error('This user does not accept private messages.');
-    error.code = 'FORBIDDEN';
-    throw error;
-  }
+    const recipientId = conv.user_a_id === senderId ? conv.user_b_id : conv.user_a_id;
+    const privacyRes = await client.query(
+      'SELECT allow_private_messages FROM users WHERE id = $1',
+      [recipientId]
+    );
+    if (privacyRes.rowCount > 0 && privacyRes.rows[0].allow_private_messages === false) {
+      const error = new Error('This user does not accept private messages.');
+      error.code = 'FORBIDDEN';
+      throw error;
+    }
 
-  const msgRes = await db.query(`
-    INSERT INTO messages (conversation_id, sender_id, content)
-    VALUES ($1, $2, $3)
-    RETURNING id, conversation_id, sender_id, content, is_read, created_at;
-  `, [conversationId, senderId, content]);
+    const msgRes = await client.query(`
+      INSERT INTO messages (conversation_id, sender_id, content)
+      VALUES ($1, $2, $3)
+      RETURNING id, conversation_id, sender_id, content, is_read, created_at;
+    `, [conversationId, senderId, content]);
 
-  return msgRes.rows[0];
+    await notificationService.createNotification(
+      client,
+      recipientId,
+      'message',
+      'You received a new private message.'
+    );
+
+    return msgRes.rows[0];
+  });
 }
 
 async function deleteMessage(messageId, requestingUserId) {

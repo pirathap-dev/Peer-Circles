@@ -6,6 +6,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   RefreshControl,
+  Alert,
 } from 'react-native';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -70,12 +71,18 @@ export default function NotificationsScreen() {
     );
 
     try {
-      await api.markNotificationAsRead(token, id);
+      const data = await api.markNotificationAsRead(token, id);
+      if (data.notification) {
+        setNotifications((prev) =>
+          prev.map((n) => (n.id === id ? data.notification : n))
+        );
+      }
     } catch (err) {
       // Revert on error
       setNotifications((prev) =>
         prev.map((n) => (n.id === id ? { ...n, is_read: false } : n))
       );
+      Alert.alert('Could not update notification', err.message || 'Please try again.');
     }
   };
 
@@ -89,7 +96,13 @@ export default function NotificationsScreen() {
       >
         <View style={styles.cardHeader}>
           <Text style={[styles.title, isUnread && styles.titleUnread]}>
-            {item.type === 'message' ? 'New Message' : item.type === 'comment' ? 'New Comment' : 'Notification'}
+            {item.type === 'message'
+              ? 'New Message'
+              : item.type === 'comment'
+                ? 'New Comment'
+                : item.type === 'discussion'
+                  ? 'New Discussion'
+                  : 'Notification'}
           </Text>
           <Text style={styles.timestamp}>{formatTime(item.created_at)}</Text>
         </View>

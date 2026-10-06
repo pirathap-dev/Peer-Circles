@@ -15,9 +15,9 @@ exports.getNotifications = async (req, res) => {
 exports.markAsRead = async (req, res) => {
   try {
     const userId = req.user.id;
-    const id = parseInt(req.params.id, 10);
+    const id = Number(req.params.id);
     
-    if (isNaN(id) || id <= 0) {
+    if (!Number.isInteger(id) || id <= 0) {
       return res.status(400).json({ error: 'Invalid notification ID.' });
     }
 
@@ -32,22 +32,5 @@ exports.markAsRead = async (req, res) => {
   } catch (err) {
     console.error('Mark notification read error:', err);
     res.status(500).json({ error: 'Could not update notification.' });
-  }
-};
-
-// Expose create for internal usage or admin routes if needed, though usually called internally
-exports.createNotification = async (req, res) => {
-  try {
-    const { userId, type, message } = req.body;
-    
-    if (!userId || !type || !message) {
-      return res.status(400).json({ error: 'User ID, type, and message are required.' });
-    }
-
-    const notification = await notificationService.createNotification(userId, type, message);
-    res.status(201).json({ message: 'Notification created.', notification });
-  } catch (err) {
-    console.error('Create notification error:', err);
-    res.status(500).json({ error: 'Could not create notification.' });
   }
 };

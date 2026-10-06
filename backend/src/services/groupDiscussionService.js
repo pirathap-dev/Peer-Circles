@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const notificationService = require('./notificationService');
 
 // Get discussions/posts for a group
 async function getGroupPosts(communityId) {
@@ -33,40 +34,46 @@ async function createGroupPost({
   isAnonymous,
   anonAlias
 }) {
-  const result = await db.query(
-    `INSERT INTO posts
-      (community_id, user_id, title, content, is_anonymous, anon_alias)
-     VALUES ($1, $2, $3, $4, $5, $6)
-     RETURNING
-       id,
-       community_id,
-       user_id,
-       title,
-       content,
-       is_anonymous,
-       anon_alias,
-       created_at`,
-    [
+  return db.transaction(async (client) => {
+    const result = await client.query(
+      `INSERT INTO posts
+        (community_id, user_id, title, content, is_anonymous, anon_alias)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING
+         id,
+         community_id,
+         user_id,
+         title,
+         content,
+         is_anonymous,
+         anon_alias,
+         created_at`,
+      [communityId, userId, title, content, isAnonymous, anonAlias]
+    );
+
+    const post = result.rows[0];
+    let author_name = null;
+    if (!isAnonymous) {
+      const author = await client.query('SELECT name FROM users WHERE id = $1', [userId]);
+      author_name = author.rows[0] ? author.rows[0].name : null;
+    }
+
+    const community = await client.query(
+      'SELECT name FROM communities WHERE id = $1',
+      [communityId]
+    );
+    await notificationService.createCommunityNotifications(
+      client,
       communityId,
       userId,
-      title,
-      content,
-      isAnonymous,
-      anonAlias
-    ]
-  );
+      community.rows[0].name
+    );
 
-  const post = result.rows[0];
-  let author_name = null;
-  if (!isAnonymous) {
-    const author = await db.query('SELECT name FROM users WHERE id = $1', [userId]);
-    author_name = author.rows[0] ? author.rows[0].name : null;
-  }
-
-  return {
-    ...post,
-    author_name
-  };
+    return {
+      ...post,
+      author_name
+    };
+  });
 }
 
 // Get a single post (with author) within a specific group
@@ -116,33 +123,47 @@ async function getComments(postId) {
 
 // Create a comment on a post
 async function createComment({ userId, postId, content, isAnonymous, anonAlias }) {
-  const result = await db.query(
-    `INSERT INTO comments
-       (post_id, user_id, content, is_anonymous, anon_alias)
-     VALUES ($1, $2, $3, $4, $5)
-     RETURNING
-       id,
-       post_id,
-       user_id,
-       content,
-       is_anonymous,
-       anon_alias,
-       created_at`,
-    [postId, userId, content.trim(), isAnonymous, anonAlias]
-  );
+  return db.transaction(async (client) => {
+    const result = await client.query(
+      `INSERT INTO comments
+         (post_id, user_id, content, is_anonymous, anon_alias)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING
+         id,
+         post_id,
+         user_id,
+         content,
+         is_anonymous,
+         anon_alias,
+         created_at`,
+      [postId, userId, content.trim(), isAnonymous, anonAlias]
+    );
 
-  const comment = result.rows[0];
+    const comment = result.rows[0];
+    let author_name = null;
+    if (!isAnonymous) {
+      const author = await client.query('SELECT name FROM users WHERE id = $1', [userId]);
+      author_name = author.rows[0] ? author.rows[0].name : 'Anonymous';
+    }
 
-  let author_name = null;
-  if (!isAnonymous) {
-    const author = await db.query('SELECT name FROM users WHERE id = $1', [userId]);
-    author_name = author.rows[0] ? author.rows[0].name : 'Anonymous';
-  }
+    const post = await client.query(
+      'SELECT user_id FROM posts WHERE id = $1',
+      [postId]
+    );
+    if (post.rows[0].user_id !== userId) {
+      await notificationService.createNotification(
+        client,
+        post.rows[0].user_id,
+        'comment',
+        'Someone commented on your discussion.'
+      );
+    }
 
-  return {
-    ...comment,
-    author_name
-  };
+    return {
+      ...comment,
+      author_name
+    };
+  });
 }
 
 // Delete a comment (only the author can delete their own comment)
