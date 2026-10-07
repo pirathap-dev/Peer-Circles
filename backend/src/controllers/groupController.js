@@ -105,6 +105,12 @@ exports.leaveGroup = async (req, res) => {
     });
 
   } catch (err) {
+    if (err.code === 'GROUP_NOT_FOUND') {
+      return res.status(404).json({
+        error: 'Support group not found.'
+      });
+    }
+
     if (err.code === 'NOT_MEMBER') {
       return res.status(404).json({
         error: 'You are not a member of this group.'
