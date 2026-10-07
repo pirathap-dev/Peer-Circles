@@ -102,12 +102,12 @@ export default function CommunityDetailsScreen() {
     setPending(true);
     setError('');
     try {
-      await api.leaveCommunity(token, id);
+      const data = await api.leaveGroup(token, id);
       setCommunity((prev) => ({
         ...prev,
         is_member: false,
         isMember: false,
-        member_count: Math.max(0, (prev?.member_count || 1) - 1),
+        member_count: data?.group?.member_count ?? Math.max(0, (prev?.member_count || 1) - 1),
       }));
       setMembershipAnon(false);
     } catch (err) {

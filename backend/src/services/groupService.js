@@ -90,50 +90,41 @@ async function joinGroup(userId, communityId) {
 
 // Leave a support group
 async function leaveGroup(userId, communityId) {
-  // 1. Check if the community exists
-  const community = await db.query(
-    `SELECT id FROM communities WHERE id = $1`,
-    [communityId]
-  );
+  return db.transaction(async (client) => {
+    const community = await client.query(
+      `SELECT id, name FROM communities WHERE id = $1 FOR UPDATE`,
+      [communityId]
+    );
 
-  if (community.rowCount === 0) {
-    const error = new Error('GROUP_NOT_FOUND');
-    error.code = 'GROUP_NOT_FOUND';
-    throw error;
-  }
+    if (community.rowCount === 0) {
+      const error = new Error('GROUP_NOT_FOUND');
+      error.code = 'GROUP_NOT_FOUND';
+      throw error;
+    }
 
-  // 2. Check if the user is a member
-  const member = await db.query(
-    `SELECT id
-     FROM community_members
-     WHERE user_id = $1
-       AND community_id = $2`,
-    [userId, communityId]
-  );
+    const membership = await client.query(
+      `DELETE FROM community_members
+       WHERE user_id = $1 AND community_id = $2
+       RETURNING id`,
+      [userId, communityId]
+    );
 
-  if (member.rowCount === 0) {
-    const error = new Error('NOT_MEMBER');
-    error.code = 'NOT_MEMBER';
-    throw error;
-  }
+    if (membership.rowCount === 0) {
+      const error = new Error('NOT_MEMBER');
+      error.code = 'NOT_MEMBER';
+      throw error;
+    }
 
-  // Remove membership
-  await db.query(
-    `DELETE FROM community_members
-     WHERE user_id = $1
-       AND community_id = $2`,
-    [userId, communityId]
-  );
+    const updatedGroup = await client.query(
+      `UPDATE communities
+       SET member_count = GREATEST(member_count - 1, 0)
+       WHERE id = $1
+       RETURNING id, name, member_count`,
+      [communityId]
+    );
 
-  // Decrease member count
-  await db.query(
-    `UPDATE communities
-     SET member_count = GREATEST(member_count - 1, 0)
-     WHERE id = $1`,
-    [communityId]
-  );
-
-  return true;
+    return updatedGroup.rows[0];
+  });
 }
 
 // Check whether user is a member

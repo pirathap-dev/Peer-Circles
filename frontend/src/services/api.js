@@ -91,7 +91,7 @@ export const api = {
     }),
 
   leaveCommunity: (token, id) =>
-    request(`/groups/${id}/leave`, { method: 'DELETE', token }),
+    request(`/communities/${id}/leave`, { method: 'DELETE', token }),
 
   leaveGroup: (token, id) =>
     request(`/groups/${id}/leave`, { method: 'DELETE', token }),

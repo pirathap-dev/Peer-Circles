@@ -43,6 +43,8 @@ export default function HomeScreen() {
   const [unreadCount, setUnreadCount] = useState(0);
 
   const debounceRef = useRef(null);
+  const filtersRef = useRef({ search, location });
+  filtersRef.current = { search, location };
 
   const loadCommunities = useCallback(
     async (term = '', loc = '') => {
@@ -60,13 +62,10 @@ export default function HomeScreen() {
     [token]
   );
 
-  useEffect(() => {
-    loadCommunities(search, location);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   useFocusEffect(
     useCallback(() => {
+      loadCommunities(filtersRef.current.search, filtersRef.current.location);
+
       const fetchUnread = async () => {
         try {
           const data = await api.getNotifications(token);
@@ -79,7 +78,7 @@ export default function HomeScreen() {
         }
       };
       fetchUnread();
-    }, [token])
+    }, [loadCommunities, token])
   );
 
   useEffect(() => {
@@ -135,17 +134,17 @@ export default function HomeScreen() {
           onPress: async () => {
             setPendingId(community.id);
             try {
-              const data = await api.leaveCommunity(token, community.id);
+              const data = await api.leaveGroup(token, community.id);
               setCommunities((prev) =>
                 prev.map((c) =>
                   c.id === community.id
                     ? {
                         ...c,
-                        ...(data?.community || {}),
+                        ...(data?.group || {}),
                         is_member: false,
                         member_count:
-                          data?.community?.member_count !== undefined
-                            ? data.community.member_count
+                          data?.group?.member_count !== undefined
+                            ? data.group.member_count
                             : Math.max(0, (c.member_count || 1) - 1),
                       }
                     : c

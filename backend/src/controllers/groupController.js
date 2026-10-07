@@ -95,13 +95,14 @@ exports.leaveGroup = async (req, res) => {
       });
     }
 
-    await groupService.leaveGroup(
+    const group = await groupService.leaveGroup(
       userId,
       communityId
     );
 
     res.json({
-      message: 'Left support group successfully.'
+      message: 'Left support group successfully.',
+      group
     });
 
   } catch (err) {
