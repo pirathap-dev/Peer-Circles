@@ -90,6 +90,19 @@ async function joinGroup(userId, communityId) {
 
 // Leave a support group
 async function leaveGroup(userId, communityId) {
+  // 1. Check if the community exists
+  const community = await db.query(
+    `SELECT id FROM communities WHERE id = $1`,
+    [communityId]
+  );
+
+  if (community.rowCount === 0) {
+    const error = new Error('GROUP_NOT_FOUND');
+    error.code = 'GROUP_NOT_FOUND';
+    throw error;
+  }
+
+  // 2. Check if the user is a member
   const member = await db.query(
     `SELECT id
      FROM community_members
