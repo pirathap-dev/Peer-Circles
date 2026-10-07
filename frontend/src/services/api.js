@@ -91,7 +91,10 @@ export const api = {
     }),
 
   leaveCommunity: (token, id) =>
-    request(`/communities/${id}/leave`, { method: 'DELETE', token }),
+    request(`/groups/${id}/leave`, { method: 'DELETE', token }),
+
+  leaveGroup: (token, id) =>
+    request(`/groups/${id}/leave`, { method: 'DELETE', token }),
 
   // Update the anonymous preference for an existing membership
   setMembershipAnonymous: (token, id, anonymous) =>

@@ -82,30 +82,41 @@ export default function CommunityDetailsScreen() {
     }
   }
 
-  // Leave community
-  async function handleLeave() {
+  // Leave support group
+  function handleLeave() {
     Alert.alert(
-      'Leave Community',
-      'Are you sure you want to leave this community?',
+      'Leave Group',
+      `Are you sure you want to leave ${community?.name || 'this group'}?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Leave',
           style: 'destructive',
-          onPress: async () => {
-            setPending(true);
-            try {
-              await api.leaveCommunity(token, id);
-              setCommunity({ ...community, is_member: false });
-            } catch (err) {
-              setError(err.message || 'Something went wrong.');
-            } finally {
-              setPending(false);
-            }
-          },
+          onPress: performLeave,
         },
       ]
     );
+  }
+
+  async function performLeave() {
+    setPending(true);
+    setError('');
+    try {
+      await api.leaveCommunity(token, id);
+      setCommunity((prev) => ({
+        ...prev,
+        is_member: false,
+        isMember: false,
+        member_count: Math.max(0, (prev?.member_count || 1) - 1),
+      }));
+      setMembershipAnon(false);
+    } catch (err) {
+      const errorMessage = err?.message || 'Could not leave support group. Please try again.';
+      setError(errorMessage);
+      Alert.alert('Leave Group Failed', errorMessage);
+    } finally {
+      setPending(false);
+    }
   }
 
   // Toggle anonymous membership preference for an existing member
@@ -128,15 +139,34 @@ export default function CommunityDetailsScreen() {
     if (!community.is_member) {
       Alert.alert(
         'Join Required',
-        'You must join this community to view and participate in discussions.',
+        'You must join this support group to view and participate in discussions.',
         [
           { text: 'Cancel', style: 'cancel' },
-          { text: 'Join Community', onPress: handleJoinPress },
+          { text: 'Join Group', onPress: handleJoinPress },
         ]
       );
       return;
     }
     navigation.navigate('DiscussionList', {
+      communityId: community.id,
+      communityName: community.name,
+    });
+  }
+
+  function handleCreatePost() {
+    if (!community) return;
+    if (!community.is_member) {
+      Alert.alert(
+        'Join Required',
+        'You must join this support group to create posts.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Join Group', onPress: handleJoinPress },
+        ]
+      );
+      return;
+    }
+    navigation.navigate('CreateDiscussion', {
       communityId: community.id,
       communityName: community.name,
     });
@@ -179,15 +209,16 @@ export default function CommunityDetailsScreen() {
           {/* Join / Leave button */}
           {community.is_member ? (
             <Button
-              label="Leave community"
+              label="Leave Group"
               variant="outline"
               onPress={handleLeave}
               loading={pending}
-              style={styles.action}
+              style={[styles.action, styles.leaveBtn]}
+              textStyle={styles.leaveBtnText}
             />
           ) : (
             <Button
-              label="Join community"
+              label="Join Group"
               variant="primary"
               onPress={handleJoinPress}
               loading={pending}
@@ -213,15 +244,41 @@ export default function CommunityDetailsScreen() {
           </View>
         )}
 
-        {community.is_member && (
+        {/* Discussions & Posts — members can participate, non-members have it disabled/locked */}
+        {community.is_member ? (
           <View style={styles.discussionSection}>
-            <Text style={styles.sectionTitle}>Participate</Text>
-            <Button
-              label="View Discussions"
-              onPress={handleViewDiscussions}
-              variant="primary"
-              style={styles.discussionButton}
-            />
+            <Text style={styles.sectionTitle}>Discussions & Posts</Text>
+            <View style={styles.actionRow}>
+              <Button
+                label="Join Discussion"
+                onPress={handleViewDiscussions}
+                variant="primary"
+                style={styles.actionRowBtn}
+              />
+              <Button
+                label="Create Post"
+                onPress={handleCreatePost}
+                variant="outline"
+                style={styles.actionRowBtn}
+              />
+            </View>
+          </View>
+        ) : (
+          <View style={styles.lockedSection}>
+            <Text style={styles.sectionTitle}>Discussions & Posts</Text>
+            <View style={styles.lockedCard}>
+              <Text style={styles.lockedIcon}>🔒</Text>
+              <Text style={styles.lockedTitle}>Members Only</Text>
+              <Text style={styles.lockedText}>
+                You must join this support group to join discussions and create posts.
+              </Text>
+              <Button
+                label="Join Group to Participate"
+                variant="outline"
+                onPress={handleJoinPress}
+                style={styles.lockedJoinBtn}
+              />
+            </View>
           </View>
         )}
 
@@ -325,6 +382,13 @@ const styles = StyleSheet.create({
     fontFamily: 'System',
   },
   action: { marginTop: spacing.sm },
+  leaveBtn: {
+    borderColor: colors.error,
+  },
+  leaveBtnText: {
+    color: colors.error,
+    fontWeight: '600',
+  },
   anonSection: {
     marginBottom: spacing.lg,
   },
@@ -341,6 +405,50 @@ const styles = StyleSheet.create({
   },
   discussionButton: {
     marginTop: spacing.sm,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  actionRowBtn: {
+    flex: 1,
+  },
+  lockedSection: {
+    marginTop: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  lockedCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: spacing.lg,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginTop: spacing.xs,
+  },
+  lockedIcon: {
+    fontSize: 28,
+    marginBottom: 6,
+  },
+  lockedTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 4,
+    fontFamily: 'System',
+  },
+  lockedText: {
+    fontSize: 14,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginBottom: spacing.md,
+    lineHeight: 20,
+    fontFamily: 'System',
+  },
+  lockedJoinBtn: {
+    width: '100%',
+    height: 44,
   },
   sectionTitle: {
     fontSize: 18,

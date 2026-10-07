@@ -123,18 +123,43 @@ export default function HomeScreen() {
     }
   }
 
-  async function handleLeave(community) {
-    setPendingId(community.id);
-    try {
-      const data = await api.leaveCommunity(token, community.id);
-      setCommunities((prev) =>
-        prev.map((c) => (c.id === community.id ? { ...data.community, is_member: false } : c))
-      );
-    } catch (err) {
-      Alert.alert('Could not leave', err.message || 'Please try again.');
-    } finally {
-      setPendingId(null);
-    }
+  function handleLeave(community) {
+    Alert.alert(
+      'Leave Group',
+      `Are you sure you want to leave ${community.name}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Leave',
+          style: 'destructive',
+          onPress: async () => {
+            setPendingId(community.id);
+            try {
+              const data = await api.leaveCommunity(token, community.id);
+              setCommunities((prev) =>
+                prev.map((c) =>
+                  c.id === community.id
+                    ? {
+                        ...c,
+                        ...(data?.community || {}),
+                        is_member: false,
+                        member_count:
+                          data?.community?.member_count !== undefined
+                            ? data.community.member_count
+                            : Math.max(0, (c.member_count || 1) - 1),
+                      }
+                    : c
+                )
+              );
+            } catch (err) {
+              Alert.alert('Could not leave', err.message || 'Please try again.');
+            } finally {
+              setPendingId(null);
+            }
+          },
+        },
+      ]
+    );
   }
 
   function openDetails(community) {
