@@ -1,4 +1,24 @@
 const db = require('../config/db');
+const notificationService = require('./notificationService');
+
+async function createGroup({ name, description, location }) {
+  return db.transaction(async (client) => {
+    const result = await client.query(
+      `INSERT INTO communities (name, description, location)
+       VALUES ($1, $2, $3)
+       RETURNING id, name, description, location, member_count, created_at`,
+      [name, description, location]
+    );
+
+    await notificationService.createBroadcastNotification(
+      client,
+      'community',
+      `A new peer group is available: ${name}`
+    );
+
+    return result.rows[0];
+  });
+}
 
 // Get all support groups
 async function getAllGroups() {
@@ -90,37 +110,41 @@ async function joinGroup(userId, communityId) {
 
 // Leave a support group
 async function leaveGroup(userId, communityId) {
-  const member = await db.query(
-    `SELECT id
-     FROM community_members
-     WHERE user_id = $1
-       AND community_id = $2`,
-    [userId, communityId]
-  );
+  return db.transaction(async (client) => {
+    const community = await client.query(
+      `SELECT id, name FROM communities WHERE id = $1 FOR UPDATE`,
+      [communityId]
+    );
 
-  if (member.rowCount === 0) {
-    const error = new Error('NOT_MEMBER');
-    error.code = 'NOT_MEMBER';
-    throw error;
-  }
+    if (community.rowCount === 0) {
+      const error = new Error('GROUP_NOT_FOUND');
+      error.code = 'GROUP_NOT_FOUND';
+      throw error;
+    }
 
-  // Remove membership
-  await db.query(
-    `DELETE FROM community_members
-     WHERE user_id = $1
-       AND community_id = $2`,
-    [userId, communityId]
-  );
+    const membership = await client.query(
+      `DELETE FROM community_members
+       WHERE user_id = $1 AND community_id = $2
+       RETURNING id`,
+      [userId, communityId]
+    );
 
-  // Decrease member count
-  await db.query(
-    `UPDATE communities
-     SET member_count = GREATEST(member_count - 1, 0)
-     WHERE id = $1`,
-    [communityId]
-  );
+    if (membership.rowCount === 0) {
+      const error = new Error('NOT_MEMBER');
+      error.code = 'NOT_MEMBER';
+      throw error;
+    }
 
-  return true;
+    const updatedGroup = await client.query(
+      `UPDATE communities
+       SET member_count = GREATEST(member_count - 1, 0)
+       WHERE id = $1
+       RETURNING id, name, member_count`,
+      [communityId]
+    );
+
+    return updatedGroup.rows[0];
+  });
 }
 
 // Check whether user is a member
@@ -137,6 +161,7 @@ async function isMember(userId, communityId) {
 }
 
 module.exports = {
+  createGroup,
   getAllGroups,
   getGroupById,
   joinGroup,

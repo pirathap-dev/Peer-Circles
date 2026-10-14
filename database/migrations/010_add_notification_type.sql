@@ -1,0 +1,2 @@
+ALTER TABLE notifications
+  ADD COLUMN IF NOT EXISTS type VARCHAR(50) NOT NULL DEFAULT 'general';

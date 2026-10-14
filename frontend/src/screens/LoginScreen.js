@@ -82,6 +82,12 @@ export default function LoginScreen() {
           <Text style={styles.linkPrompt}>Don't have an account? </Text>
           <Text style={styles.linkAction}>Create one</Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.adminLink}
+          onPress={() => navigation.navigate('AdminLogin')}
+        >
+          <Text style={styles.linkAction}>Administrator sign in</Text>
+        </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -118,6 +124,10 @@ const styles = StyleSheet.create({
   linkRow: {
     flexDirection: 'row',
     justifyContent: 'center',
+    marginTop: spacing.lg,
+  },
+  adminLink: {
+    alignItems: 'center',
     marginTop: spacing.lg,
   },
   linkPrompt: {

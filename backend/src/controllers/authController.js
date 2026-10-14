@@ -1,5 +1,33 @@
 // Auth controllers: register, login, me.
+const crypto = require('crypto');
 const userService = require('../services/userService');
+const config = require('../config');
+const { signToken } = require('../services/tokenService');
+
+exports.adminLogin = async (req, res) => {
+  const { username, password } = req.body;
+  if (typeof username !== 'string' || typeof password !== 'string' || !username || !password) {
+    return res.status(400).json({ error: 'Username and password are required.' });
+  }
+  if (!config.adminUsername || !config.adminPassword) {
+    return res.status(503).json({ error: 'Admin sign-in is not configured on the server.' });
+  }
+
+  const matches = (candidate, expected) => crypto.timingSafeEqual(
+    crypto.createHash('sha256').update(candidate).digest(),
+    crypto.createHash('sha256').update(expected).digest()
+  );
+  if (!matches(username, config.adminUsername) || !matches(password, config.adminPassword)) {
+    return res.status(401).json({ error: 'Invalid admin username or password.' });
+  }
+
+  const token = signToken({ role: 'admin', username: config.adminUsername });
+  return res.json({
+    message: 'Admin sign-in successful.',
+    token,
+    admin: { username: config.adminUsername, role: 'admin' },
+  });
+};
 
 exports.register = async (req, res) => {
   const { name, email, password } = req.body;
@@ -92,5 +120,41 @@ exports.updateMe = async (req, res) => {
     }
     console.error('Update profile error:', err);
     return res.status(500).json({ error: 'Could not update profile.' });
+  }
+};
+
+exports.getPrivacy = async (req, res) => {
+  try {
+    const settings = await userService.getPrivacySettings(req.user.id);
+    if (!settings) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+    res.json(settings);
+  } catch (err) {
+    console.error('Get privacy error:', err);
+    return res.status(500).json({ error: 'Could not load privacy settings.' });
+  }
+};
+
+exports.updatePrivacy = async (req, res) => {
+  const { allow_private_messages, show_online_status, make_profile_private } = req.body;
+
+  if (typeof allow_private_messages !== 'boolean' || typeof show_online_status !== 'boolean' || typeof make_profile_private !== 'boolean') {
+    return res.status(400).json({ error: 'Privacy settings must be boolean values.' });
+  }
+
+  try {
+    const settings = await userService.updatePrivacySettings(req.user.id, {
+      allow_private_messages,
+      show_online_status,
+      make_profile_private,
+    });
+    if (!settings) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+    res.json(settings);
+  } catch (err) {
+    console.error('Update privacy error:', err);
+    return res.status(500).json({ error: 'Could not update privacy settings.' });
   }
 };

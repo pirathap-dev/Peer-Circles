@@ -14,6 +14,16 @@ import EditProfileScreen from '../screens/EditProfileScreen';
 import DiscussionListScreen from '../screens/DiscussionListScreen';
 import CreateDiscussionScreen from '../screens/CreateDiscussionScreen';
 import DiscussionDetailScreen from '../screens/DiscussionDetailScreen';
+import MessagesInboxScreen from '../screens/MessagesInboxScreen';
+import ConversationScreen from '../screens/ConversationScreen';
+import MemberProfileScreen from '../screens/MemberProfileScreen';
+import EducationalResourcesScreen from '../screens/EducationalResourcesScreen';
+import EventsScreen from '../screens/EventsScreen';
+import EventDetailsScreen from '../screens/EventDetailsScreen';
+import NotificationsScreen from '../screens/NotificationsScreen';
+import PrivacySettingsScreen from '../screens/PrivacySettingsScreen';
+import AdminLoginScreen from '../screens/AdminLoginScreen';
+import AdminDashboardScreen from '../screens/AdminDashboardScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -26,7 +36,7 @@ const mainScreenOptions = {
 };
 
 export default function AppNavigator() {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, role } = useAuth();
 
   if (loading) {
     return <Loader style={{ flex: 1 }} />;
@@ -36,46 +46,99 @@ export default function AppNavigator() {
     <NavigationContainer>
       <Stack.Navigator screenOptions={mainScreenOptions}>
         {isAuthenticated ? (
-          <>
+          role === 'admin' ? (
             <Stack.Screen
-              name="Home"
-              component={HomeScreen}
-              options={{ headerShown: false }}
+              name="AdminDashboard"
+              component={AdminDashboardScreen}
+              options={{ title: 'Admin Console', headerBackVisible: false }}
             />
-            <Stack.Screen
-              name="CommunityDetails"
-              component={CommunityDetailsScreen}
-              options={{ title: 'Community' }}
-            />
-            <Stack.Screen
-              name="DiscussionList"
-              component={DiscussionListScreen}
-              options={{ title: 'Discussions' }}
-            />
-            <Stack.Screen
-              name="CreateDiscussion"
-              component={CreateDiscussionScreen}
-              options={{ title: 'New Discussion' }}
-            />
-            <Stack.Screen
-              name="DiscussionDetail"
-              component={DiscussionDetailScreen}
-              options={{ title: 'Discussion' }}
-            />
-            <Stack.Screen
-              name="Profile"
-              component={ProfileScreen}
-              options={{ title: 'Profile' }}
-            />
-            <Stack.Screen
-              name="EditProfile"
-              component={EditProfileScreen}
-              options={{ title: 'Edit Profile' }}
-            />
-          </>
+          ) : (
+            <>
+              <Stack.Screen
+                name="Home"
+                component={HomeScreen}
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="CommunityDetails"
+                component={CommunityDetailsScreen}
+                options={{ title: 'Community' }}
+              />
+              <Stack.Screen
+                name="DiscussionList"
+                component={DiscussionListScreen}
+                options={{ title: 'Discussions' }}
+              />
+              <Stack.Screen
+                name="CreateDiscussion"
+                component={CreateDiscussionScreen}
+                options={{ title: 'New Discussion' }}
+              />
+              <Stack.Screen
+                name="DiscussionDetail"
+                component={DiscussionDetailScreen}
+                options={{ title: 'Discussion' }}
+              />
+              <Stack.Screen
+                name="Profile"
+                component={ProfileScreen}
+                options={{ title: 'Profile' }}
+              />
+              <Stack.Screen
+                name="EditProfile"
+                component={EditProfileScreen}
+                options={{ title: 'Edit Profile' }}
+              />
+              <Stack.Screen
+                name="PrivacySettings"
+                component={PrivacySettingsScreen}
+                options={{ title: 'Privacy Settings' }}
+              />
+              <Stack.Screen
+                name="MessagesInbox"
+                component={MessagesInboxScreen}
+                options={{ title: 'Messages' }}
+              />
+              <Stack.Screen
+                name="Conversation"
+                component={ConversationScreen}
+                options={{ title: 'Chat' }}
+              />
+              <Stack.Screen
+                name="MemberProfile"
+                component={MemberProfileScreen}
+                options={{ title: 'Member' }}
+              />
+              <Stack.Screen
+                name="EducationalResources"
+                component={EducationalResourcesScreen}
+                options={{ title: 'Resources' }}
+              />
+              <Stack.Screen
+                name="Events"
+                component={EventsScreen}
+                options={{ title: 'Events' }}
+              />
+              <Stack.Screen
+                name="EventDetails"
+                component={EventDetailsScreen}
+                options={{ title: 'Event Details' }}
+              />
+              <Stack.Screen
+                name="Notifications"
+                component={NotificationsScreen}
+                options={{ title: 'Notifications' }}
+              />
+            </>
+          )
         ) : (
           <>
             <Stack.Screen name="Login" component={LoginScreen} options={authScreenOptions} />
+            <Stack.Screen
+              name="AdminLogin"
+              component={AdminLoginScreen}
+              options={{ title: 'Admin sign in' }}
+            />
             <Stack.Screen
               name="Register"
               component={RegisterScreen}

@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { View, Text, FlatList, StyleSheet, SafeAreaView, TouchableOpacity, RefreshControl, Alert } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { colors, spacing } from '../config';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -33,10 +33,11 @@ export default function DiscussionListScreen() {
     }
   }, [token, communityId]);
 
-  useEffect(() => {
-    loadDiscussions();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadDiscussions();
+    }, [loadDiscussions])
+  );
 
   useEffect(() => {
     navigation.setOptions({ 

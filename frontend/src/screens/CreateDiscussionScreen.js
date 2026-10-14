@@ -1,11 +1,22 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, SafeAreaView, ScrollView, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  SafeAreaView,
+  ScrollView,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { colors, spacing } from '../config';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import Button from '../components/Button';
 import Input from '../components/Input';
+import AnonymousToggle from '../components/AnonymousToggle';
 
 export default function CreateDiscussionScreen() {
   const navigation = useNavigation();
@@ -15,6 +26,7 @@ export default function CreateDiscussionScreen() {
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [isAnonymous, setIsAnonymous] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
@@ -40,10 +52,18 @@ export default function CreateDiscussionScreen() {
     if (!validate()) return;
     setLoading(true);
     try {
-      await api.createDiscussion(token, communityId, { title, content });
-      Alert.alert('Success', 'Discussion created successfully!', [
-        { text: 'OK', onPress: () => navigation.goBack() },
-      ]);
+      await api.createDiscussion(token, communityId, {
+        title,
+        content,
+        is_anonymous: isAnonymous,
+      });
+      Alert.alert(
+        'Success',
+        isAnonymous
+          ? 'Discussion posted anonymously!'
+          : 'Discussion created successfully!',
+        [{ text: 'OK', onPress: () => navigation.goBack() }]
+      );
     } catch (err) {
       Alert.alert('Error', err.message || 'Failed to create discussion.');
     } finally {
@@ -68,7 +88,24 @@ export default function CreateDiscussionScreen() {
             <Text style={styles.subheader}>
               Starting a discussion in {communityName || 'this community'}
             </Text>
+
+            {/* Anonymous banner — shown at top when ON so user sees it clearly */}
+            {isAnonymous && (
+              <View style={styles.anonTopBanner}>
+                <Text style={styles.anonTopBannerIcon}>🎭</Text>
+                <Text style={styles.anonTopBannerText}>
+                  You are posting this discussion anonymously. Your real name will not be shown.
+                </Text>
+              </View>
+            )}
+
             <View style={styles.form}>
+              {/* Anonymous toggle */}
+              <AnonymousToggle
+                value={isAnonymous}
+                onChange={setIsAnonymous}
+              />
+
               <Input
                 label="Title"
                 value={title}
@@ -77,6 +114,7 @@ export default function CreateDiscussionScreen() {
                 error={errors.title}
                 autoCapitalize="words"
               />
+
               <View style={styles.contentWrapper}>
                 <Text style={styles.label}>Content</Text>
                 <TextInput
@@ -89,22 +127,29 @@ export default function CreateDiscussionScreen() {
                   numberOfLines={8}
                   textAlignVertical="top"
                 />
-                {errors.content && <Text style={styles.errorText}>{errors.content}</Text>}
+                {errors.content && (
+                  <Text style={styles.errorText}>{errors.content}</Text>
+                )}
               </View>
+
               <View style={styles.charCount}>
                 <Text style={styles.charCountText}>
                   {content.length} characters (minimum 10)
                 </Text>
               </View>
+
               <View style={styles.guidelines}>
                 <Text style={styles.guidelinesTitle}>Community Guidelines:</Text>
                 <Text style={styles.guidelineItem}>• Be respectful and supportive</Text>
                 <Text style={styles.guidelineItem}>• Share your experiences honestly</Text>
                 <Text style={styles.guidelineItem}>• Maintain confidentiality</Text>
-                <Text style={styles.guidelineItem}>• Avoid giving professional medical advice</Text>
+                <Text style={styles.guidelineItem}>
+                  • Avoid giving professional medical advice
+                </Text>
               </View>
+
               <Button
-                label="Post Discussion"
+                label={isAnonymous ? '🎭  Post Anonymously' : 'Post Discussion'}
                 onPress={handleSubmit}
                 loading={loading}
                 disabled={loading}
@@ -137,6 +182,28 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     marginBottom: spacing.lg,
     fontFamily: 'System',
+  },
+  // Anonymous top banner
+  anonTopBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primary,
+    borderRadius: 14,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.md,
+    gap: 8,
+  },
+  anonTopBannerIcon: {
+    fontSize: 20,
+  },
+  anonTopBannerText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#FFFFFF',
+    fontFamily: 'System',
+    lineHeight: 18,
+    fontWeight: '500',
   },
   form: {
     backgroundColor: colors.surface,

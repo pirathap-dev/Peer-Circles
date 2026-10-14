@@ -9,6 +9,7 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
+  const [role, setRole] = useState('user');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -17,6 +18,7 @@ export function AuthProvider({ children }) {
       if (stored) {
         setToken(stored.token);
         setUser(stored.user);
+        setRole(stored.role || 'user');
       }
       setLoading(false);
     })();
@@ -26,7 +28,17 @@ export function AuthProvider({ children }) {
     const data = await api.login(email, password);
     setToken(data.token);
     setUser(data.user);
-    await saveAuth(data.token, data.user);
+    setRole('user');
+    await saveAuth(data.token, data.user, 'user');
+    return data;
+  }, []);
+
+  const adminLogin = useCallback(async (username, password) => {
+    const data = await api.adminLogin(username, password);
+    setToken(data.token);
+    setUser(data.admin);
+    setRole('admin');
+    await saveAuth(data.token, data.admin, 'admin');
     return data;
   }, []);
 
@@ -34,27 +46,40 @@ export function AuthProvider({ children }) {
     const data = await api.register(name, email, password);
     setToken(data.token);
     setUser(data.user);
-    await saveAuth(data.token, data.user);
+    setRole('user');
+    await saveAuth(data.token, data.user, 'user');
     return data;
   }, []);
 
   const logout = useCallback(async () => {
     setToken(null);
     setUser(null);
+    setRole('user');
     await clearAuth();
   }, []);
 
   const updateUser = useCallback(
     async (updatedUser) => {
       setUser(updatedUser);
-      if (token) await saveAuth(token, updatedUser);
+      if (token) await saveAuth(token, updatedUser, role);
     },
-    [token]
+    [token, role]
   );
 
   return (
     <AuthContext.Provider
-      value={{ user, token, loading, login, register, logout, updateUser, isAuthenticated: !!token }}
+      value={{
+        user,
+        token,
+        role,
+        loading,
+        login,
+        adminLogin,
+        register,
+        logout,
+        updateUser,
+        isAuthenticated: !!token,
+      }}
     >
       {children}
     </AuthContext.Provider>

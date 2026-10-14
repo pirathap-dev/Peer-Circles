@@ -78,8 +78,33 @@ async function updateUser(id, { name, email, avatar_url }) {
   return result.rows[0] || null;
 }
 
+async function getPrivacySettings(userId) {
+  const result = await db.query(
+    `SELECT allow_private_messages, show_online_status, make_profile_private
+     FROM users
+     WHERE id = $1`,
+    [userId]
+  );
+  return result.rows[0] || null;
+}
+
+async function updatePrivacySettings(userId, settings) {
+  const { allow_private_messages, show_online_status, make_profile_private } = settings;
+  const result = await db.query(
+    `UPDATE users
+     SET allow_private_messages = $2,
+         show_online_status = $3,
+         make_profile_private = $4,
+         updated_at = NOW()
+     WHERE id = $1
+     RETURNING allow_private_messages, show_online_status, make_profile_private`,
+    [userId, allow_private_messages, show_online_status, make_profile_private]
+  );
+  return result.rows[0] || null;
+}
+
 function issueAuthToken(user) {
   return signToken({ id: user.id, email: user.email });
 }
 
-module.exports = { createUser, authenticate, getUserById, updateUser, issueAuthToken };
+module.exports = { createUser, authenticate, getUserById, updateUser, issueAuthToken, getPrivacySettings, updatePrivacySettings };

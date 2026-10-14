@@ -1,11 +1,22 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, StyleSheet, SafeAreaView, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  SafeAreaView,
+  Alert,
+  TouchableOpacity,
+  Modal,
+  Platform,
+} from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { colors, spacing } from '../config';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import Button from '../components/Button';
 import Loader from '../components/Loader';
+import AnonymousToggle from '../components/AnonymousToggle';
 
 export default function CommunityDetailsScreen() {
   const navigation = useNavigation();
@@ -18,12 +29,22 @@ export default function CommunityDetailsScreen() {
   const [error, setError] = useState('');
   const [pending, setPending] = useState(false);
 
+  // Anonymous join modal state
+  const [joinModalVisible, setJoinModalVisible] = useState(false);
+  const [joinAnonymous, setJoinAnonymous] = useState(false);
+
+  // Per-membership anonymous toggle (after already joined)
+  const [updatingAnon, setUpdatingAnon] = useState(false);
+  const [membershipAnon, setMembershipAnon] = useState(false);
+
   // Load community details from the API
   const load = useCallback(async () => {
     try {
       setError('');
       const data = await api.getCommunity(token, id);
       setCommunity(data.community);
+      // Initialise the membership anon preference from the API response
+      setMembershipAnon(!!data.community.member_anonymous);
     } catch (err) {
       setError(err.message || 'Could not load community.');
     } finally {
@@ -40,18 +61,76 @@ export default function CommunityDetailsScreen() {
     navigation.setOptions({ title: community?.name || 'Community' });
   }, [navigation, community?.name]);
 
-  // Function to handle joining or leaving the community
-  async function toggleMembership() {
-    if (!community) return;
+  // Show the join modal (to let the user choose anonymity before joining)
+  function handleJoinPress() {
+    setJoinAnonymous(false);
+    setJoinModalVisible(true);
+  }
+
+  // Confirm join from modal
+  async function confirmJoin() {
+    setJoinModalVisible(false);
     setPending(true);
     try {
-      const apiCall = community.is_member ? api.leaveCommunity : api.joinCommunity;
-      const data = await apiCall(token, id);
-      setCommunity({ ...data.community, is_member: !community.is_member });
+      const data = await api.joinCommunity(token, id, { anonymous: joinAnonymous });
+      setCommunity({ ...data.community, is_member: true });
+      setMembershipAnon(joinAnonymous);
     } catch (err) {
       setError(err.message || 'Something went wrong.');
     } finally {
       setPending(false);
+    }
+  }
+
+  // Leave support group
+  function handleLeave() {
+    Alert.alert(
+      'Leave Group',
+      `Are you sure you want to leave ${community?.name || 'this group'}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Leave',
+          style: 'destructive',
+          onPress: performLeave,
+        },
+      ]
+    );
+  }
+
+  async function performLeave() {
+    setPending(true);
+    setError('');
+    try {
+      const data = await api.leaveGroup(token, id);
+      setCommunity((prev) => ({
+        ...prev,
+        is_member: false,
+        isMember: false,
+        member_count: data?.group?.member_count ?? Math.max(0, (prev?.member_count || 1) - 1),
+      }));
+      setMembershipAnon(false);
+    } catch (err) {
+      const errorMessage = err?.message || 'Could not leave support group. Please try again.';
+      setError(errorMessage);
+      Alert.alert('Leave Group Failed', errorMessage);
+    } finally {
+      setPending(false);
+    }
+  }
+
+  // Toggle anonymous membership preference for an existing member
+  async function handleMembershipAnonChange(newVal) {
+    setMembershipAnon(newVal);
+    setUpdatingAnon(true);
+    try {
+      await api.setMembershipAnonymous(token, id, newVal);
+    } catch (err) {
+      // Revert on failure
+      setMembershipAnon(!newVal);
+      Alert.alert('Error', err.message || 'Could not update preference.');
+    } finally {
+      setUpdatingAnon(false);
     }
   }
 
@@ -60,10 +139,10 @@ export default function CommunityDetailsScreen() {
     if (!community.is_member) {
       Alert.alert(
         'Join Required',
-        'You must join this community to view and participate in discussions.',
+        'You must join this support group to view and participate in discussions.',
         [
           { text: 'Cancel', style: 'cancel' },
-          { text: 'Join Community', onPress: toggleMembership },
+          { text: 'Join Group', onPress: handleJoinPress },
         ]
       );
       return;
@@ -74,12 +153,30 @@ export default function CommunityDetailsScreen() {
     });
   }
 
+  function handleCreatePost() {
+    if (!community) return;
+    if (!community.is_member) {
+      Alert.alert(
+        'Join Required',
+        'You must join this support group to create posts.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Join Group', onPress: handleJoinPress },
+        ]
+      );
+      return;
+    }
+    navigation.navigate('CreateDiscussion', {
+      communityId: community.id,
+      communityName: community.name,
+    });
+  }
+
   if (loading) return <SafeAreaView style={styles.flex}><Loader style={styles.loader} /></SafeAreaView>;
 
   // Show error message if there was an error and no community data is available
   if (error && !community) {
     return (
-      // Render an error message with a retry button
       <SafeAreaView style={styles.flex}>
         <View style={styles.center}>
           <Text style={styles.errorText}>{error}</Text>
@@ -89,10 +186,10 @@ export default function CommunityDetailsScreen() {
     );
   }
 
-  // Render the community details
   return (
     <SafeAreaView style={styles.flex}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        {/* Header card */}
         <View style={styles.headerCard}>
           <View style={styles.locationRow}>
             <Text style={styles.locationText}>{community.location}</Text>
@@ -100,35 +197,136 @@ export default function CommunityDetailsScreen() {
           <Text style={styles.name}>{community.name}</Text>
           <Text style={styles.members}>{community.member_count} members</Text>
 
-          <Button
-            label={community.is_member ? 'Leave community' : 'Join community'}
-            variant={community.is_member ? 'outline' : 'primary'}
-            onPress={toggleMembership}
-            loading={pending}
-            style={styles.action}
-          />
+          {/* Member status badge */}
+          {community.is_member && (
+            <View style={styles.memberBadge}>
+              <Text style={styles.memberBadgeText}>
+                {membershipAnon ? '🎭 Participating Anonymously' : '✓ Member'}
+              </Text>
+            </View>
+          )}
+
+          {/* Join / Leave button */}
+          {community.is_member ? (
+            <Button
+              label="Leave Group"
+              variant="outline"
+              onPress={handleLeave}
+              loading={pending}
+              style={[styles.action, styles.leaveBtn]}
+              textStyle={styles.leaveBtnText}
+            />
+          ) : (
+            <Button
+              label="Join Group"
+              variant="primary"
+              onPress={handleJoinPress}
+              loading={pending}
+              style={styles.action}
+            />
+          )}
         </View>
 
         <Text style={styles.sectionTitle}>About this community</Text>
         <Text style={styles.description}>{community.description}</Text>
 
+        {/* Anonymity preference — only shown to members */}
         {community.is_member && (
-          <View style={styles.discussionSection}>
-            <Text style={styles.sectionTitle}>Participate</Text>
-            <Button
-              label="View Discussions"
-              onPress={handleViewDiscussions}
-              variant="primary"
-              style={styles.discussionButton}
+          <View style={styles.anonSection}>
+            <Text style={styles.sectionTitle}>Privacy Settings</Text>
+            <AnonymousToggle
+              value={membershipAnon}
+              onChange={handleMembershipAnonChange}
             />
+            {updatingAnon && (
+              <Text style={styles.updatingText}>Saving preference…</Text>
+            )}
+          </View>
+        )}
+
+        {/* Discussions & Posts — members can participate, non-members have it disabled/locked */}
+        {community.is_member ? (
+          <View style={styles.discussionSection}>
+            <Text style={styles.sectionTitle}>Discussions & Posts</Text>
+            <View style={styles.actionRow}>
+              <Button
+                label="Join Discussion"
+                onPress={handleViewDiscussions}
+                variant="primary"
+                style={styles.actionRowBtn}
+              />
+              <Button
+                label="Create Post"
+                onPress={handleCreatePost}
+                variant="outline"
+                style={styles.actionRowBtn}
+              />
+            </View>
+          </View>
+        ) : (
+          <View style={styles.lockedSection}>
+            <Text style={styles.sectionTitle}>Discussions & Posts</Text>
+            <View style={styles.lockedCard}>
+              <Text style={styles.lockedIcon}>🔒</Text>
+              <Text style={styles.lockedTitle}>Members Only</Text>
+              <Text style={styles.lockedText}>
+                You must join this support group to join discussions and create posts.
+              </Text>
+              <Button
+                label="Join Group to Participate"
+                variant="outline"
+                onPress={handleJoinPress}
+                style={styles.lockedJoinBtn}
+              />
+            </View>
           </View>
         )}
 
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-        <View style={styles.disclaimer}>
-        </View>
+        <View style={styles.disclaimer} />
       </ScrollView>
+
+      {/* ── Join modal ─────────────────────────────────────────────────────── */}
+      <Modal
+        visible={joinModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setJoinModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Join {community?.name}</Text>
+            <Text style={styles.modalSubtitle}>
+              Choose how you'd like to participate in this community.
+            </Text>
+
+            <AnonymousToggle
+              value={joinAnonymous}
+              onChange={setJoinAnonymous}
+            />
+
+            <Text style={styles.modalNote}>
+              You can change this preference any time from the community page.
+            </Text>
+
+            <View style={styles.modalButtons}>
+              <Button
+                label="Cancel"
+                variant="outline"
+                onPress={() => setJoinModalVisible(false)}
+                style={styles.modalBtnCancel}
+              />
+              <Button
+                label={joinAnonymous ? 'Join Anonymously' : 'Join Community'}
+                variant="primary"
+                onPress={confirmJoin}
+                style={styles.modalBtnConfirm}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -169,13 +367,88 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     fontFamily: 'System',
   },
+  memberBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: colors.primary,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    marginBottom: spacing.sm,
+  },
+  memberBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    fontFamily: 'System',
+  },
   action: { marginTop: spacing.sm },
+  leaveBtn: {
+    borderColor: colors.error,
+  },
+  leaveBtnText: {
+    color: colors.error,
+    fontWeight: '600',
+  },
+  anonSection: {
+    marginBottom: spacing.lg,
+  },
+  updatingText: {
+    fontSize: 12,
+    color: colors.textMuted,
+    fontFamily: 'System',
+    marginTop: -spacing.sm,
+    marginBottom: spacing.sm,
+  },
   discussionSection: {
     marginTop: spacing.md,
     marginBottom: spacing.lg,
   },
   discussionButton: {
     marginTop: spacing.sm,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  actionRowBtn: {
+    flex: 1,
+  },
+  lockedSection: {
+    marginTop: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  lockedCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: spacing.lg,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginTop: spacing.xs,
+  },
+  lockedIcon: {
+    fontSize: 28,
+    marginBottom: 6,
+  },
+  lockedTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 4,
+    fontFamily: 'System',
+  },
+  lockedText: {
+    fontSize: 14,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginBottom: spacing.md,
+    lineHeight: 20,
+    fontFamily: 'System',
+  },
+  lockedJoinBtn: {
+    width: '100%',
+    height: 44,
   },
   sectionTitle: {
     fontSize: 18,
@@ -207,11 +480,50 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
     marginTop: spacing.lg,
   },
-  disclaimerText: {
+
+  // ── Join modal ───────────────────────────────────────────────────────────
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'flex-end',
+  },
+  modalCard: {
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: spacing.lg,
+    paddingBottom: Platform.OS === 'ios' ? 36 : spacing.lg,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: 6,
+    fontFamily: 'System',
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: colors.textMuted,
+    marginBottom: spacing.lg,
+    lineHeight: 20,
+    fontFamily: 'System',
+  },
+  modalNote: {
     fontSize: 12,
     color: colors.textMuted,
-    textAlign: 'center',
+    marginBottom: spacing.lg,
     lineHeight: 18,
     fontFamily: 'System',
+    fontStyle: 'italic',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  modalBtnCancel: {
+    flex: 1,
+  },
+  modalBtnConfirm: {
+    flex: 2,
   },
 });

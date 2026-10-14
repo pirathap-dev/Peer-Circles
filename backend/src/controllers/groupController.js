@@ -1,5 +1,36 @@
 const groupService = require('../services/groupService');
 
+// POST /api/groups
+exports.createGroup = async (req, res) => {
+  try {
+    const { name, description, location } = req.body;
+    if (
+      typeof name !== 'string' || !name.trim() ||
+      typeof description !== 'string' || !description.trim() ||
+      typeof location !== 'string' || !location.trim()
+    ) {
+      return res.status(400).json({
+        error: 'Group name, description, and location are required.'
+      });
+    }
+    if (name.trim().length > 150 || location.trim().length > 100) {
+      return res.status(400).json({
+        error: 'Group name cannot exceed 150 characters and location cannot exceed 100 characters.'
+      });
+    }
+
+    const group = await groupService.createGroup({
+      name: name.trim(),
+      description: description.trim(),
+      location: location.trim()
+    });
+    return res.status(201).json({ message: 'Peer group created.', group });
+  } catch (err) {
+    console.error('Create peer group error:', err);
+    return res.status(500).json({ error: 'Could not create peer group.' });
+  }
+};
+
 // GET /api/groups
 exports.getGroups = async (req, res) => {
   try {
@@ -95,16 +126,23 @@ exports.leaveGroup = async (req, res) => {
       });
     }
 
-    await groupService.leaveGroup(
+    const group = await groupService.leaveGroup(
       userId,
       communityId
     );
 
     res.json({
-      message: 'Left support group successfully.'
+      message: 'Left support group successfully.',
+      group
     });
 
   } catch (err) {
+    if (err.code === 'GROUP_NOT_FOUND') {
+      return res.status(404).json({
+        error: 'Support group not found.'
+      });
+    }
+
     if (err.code === 'NOT_MEMBER') {
       return res.status(404).json({
         error: 'You are not a member of this group.'

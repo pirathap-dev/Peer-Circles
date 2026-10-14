@@ -4,8 +4,10 @@ const router = express.Router();
 
 const groupController = require('../controllers/groupController');
 
-const { authRequired } = require('../middleware/auth');
+const { authRequired, authAdminRequired } = require('../middleware/auth');
 
+// Only administrators can create peer groups.
+router.post('/', authAdminRequired, groupController.createGroup);
 // Browse groups
 router.get('/', authRequired, groupController.getGroups);
 

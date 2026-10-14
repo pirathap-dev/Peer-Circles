@@ -75,12 +75,20 @@ export default function ProfileScreen() {
             onPress={() => navigation.navigate('EditProfile')}
             style={styles.buttonHalf}
           />
+          <Button
+            label="Privacy Settings"
+            variant="secondary"
+            onPress={() => navigation.navigate('PrivacySettings')}
+            style={styles.buttonHalf}
+          />
+        </View>
 
+        <View style={[styles.buttonRow, { marginTop: spacing.sm }]}>
           <Button
             label="Sign out"
             variant="danger"
             onPress={handleLogout}
-            style={styles.buttonHalf}
+            style={{ flex: 1 }}
           />
         </View>
 

@@ -3,6 +3,8 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { colors, spacing } from '../config';
 
 export default function DiscussionCard({ discussion, onPress, showAuthor = true }) {
+  const isAnon = !!discussion.is_anonymous;
+
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -18,31 +20,54 @@ export default function DiscussionCard({ discussion, onPress, showAuthor = true 
     return date.toLocaleDateString();
   };
 
+  // Display name
+  const displayName = isAnon
+    ? discussion.anon_alias || 'Anonymous'
+    : discussion.author_name || 'Anonymous';
+
   return (
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.7}
-      style={styles.card}
+      style={[styles.card, isAnon && styles.cardAnon]}
     >
       <View style={styles.header}>
         {showAuthor && (
-          <Text style={styles.author}>{discussion.author_name || 'Anonymous'}</Text>
+          <View style={styles.authorRow}>
+            {isAnon && <Text style={styles.anonIcon}>🎭 </Text>}
+            <Text style={[styles.author, isAnon && styles.authorAnon]} numberOfLines={1}>
+              {displayName}
+            </Text>
+            {isAnon && (
+              <View style={styles.anonBadge}>
+                <Text style={styles.anonBadgeText}>Anonymous</Text>
+              </View>
+            )}
+          </View>
         )}
         <Text style={styles.date}>{formatDate(discussion.created_at)}</Text>
       </View>
+
       <Text style={styles.title} numberOfLines={2}>
         {discussion.title}
       </Text>
+
       {discussion.content && (
         <Text style={styles.content} numberOfLines={3}>
           {discussion.content}
         </Text>
       )}
+
       <View style={styles.footer}>
         <View style={styles.commentCount}>
           <Text style={styles.commentIcon}>💬</Text>
           <Text style={styles.commentText}>{discussion.comment_count || 0}</Text>
         </View>
+        {isAnon && (
+          <View style={styles.anonFooterBadge}>
+            <Text style={styles.anonFooterText}>🔒 Posted anonymously</Text>
+          </View>
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -57,11 +82,27 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
+  cardAnon: {
+    borderColor: colors.primary + '40',
+    borderLeftWidth: 3,
+    borderLeftColor: colors.primary,
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: spacing.sm,
+  },
+  authorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 8,
+    flexWrap: 'wrap',
+    gap: 4,
+  },
+  anonIcon: {
+    fontSize: 12,
   },
   author: {
     fontSize: 13,
@@ -69,10 +110,28 @@ const styles = StyleSheet.create({
     color: colors.primaryDark,
     fontFamily: 'System',
   },
+  authorAnon: {
+    fontStyle: 'italic',
+    color: colors.primary,
+  },
+  anonBadge: {
+    backgroundColor: colors.primary,
+    borderRadius: 6,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+  },
+  anonBadgeText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    fontFamily: 'System',
+    letterSpacing: 0.3,
+  },
   date: {
     fontSize: 12,
     color: colors.textMuted,
     fontFamily: 'System',
+    flexShrink: 0,
   },
   title: {
     fontSize: 16,
@@ -91,6 +150,7 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginTop: spacing.xs,
   },
   commentCount: {
@@ -105,5 +165,17 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.textMuted,
     fontFamily: 'System',
+  },
+  anonFooterBadge: {
+    backgroundColor: colors.primarySoft,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  anonFooterText: {
+    fontSize: 11,
+    color: colors.primaryDark,
+    fontFamily: 'System',
+    fontWeight: '500',
   },
 });

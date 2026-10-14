@@ -2,17 +2,20 @@
 -- Community Mental Health Peer-Support Network
 -- PostgreSQL Schema
 -- ==========================================================================
--- Run this file to create all tables required for the initial version
--- plus the architecture for future features.
+-- Run this file to create all tables used by the current application.
 -- ==========================================================================
 
 -- Drop in reverse dependency order (useful during development)
 DROP TABLE IF EXISTS notifications CASCADE;
+DROP TABLE IF EXISTS messages CASCADE;
+DROP TABLE IF EXISTS conversations CASCADE;
+DROP TABLE IF EXISTS educational_resources CASCADE;
 DROP TABLE IF EXISTS reports CASCADE;
 DROP TABLE IF EXISTS comments CASCADE;
 DROP TABLE IF EXISTS posts CASCADE;
 DROP TABLE IF EXISTS community_members CASCADE;
 DROP TABLE IF EXISTS communities CASCADE;
+DROP TABLE IF EXISTS events CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 
 -- --------------------------------------------------------------------------
@@ -24,6 +27,9 @@ CREATE TABLE users (
     email        VARCHAR(255) NOT NULL UNIQUE,
     password     VARCHAR(255) NOT NULL,
     avatar_url   VARCHAR(500),
+    allow_private_messages BOOLEAN NOT NULL DEFAULT TRUE,
+    show_online_status BOOLEAN NOT NULL DEFAULT TRUE,
+    make_profile_private BOOLEAN NOT NULL DEFAULT FALSE,
     created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -49,6 +55,7 @@ CREATE TABLE community_members (
     id            SERIAL PRIMARY KEY,
     user_id       INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     community_id  INTEGER NOT NULL REFERENCES communities (id) ON DELETE CASCADE,
+    anonymous     BOOLEAN NOT NULL DEFAULT FALSE,
     joined_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE (user_id, community_id)
 );
@@ -57,7 +64,23 @@ CREATE INDEX idx_community_members_user    ON community_members (user_id);
 CREATE INDEX idx_community_members_community ON community_members (community_id);
 
 -- --------------------------------------------------------------------------
--- posts (architecture for future versions)
+-- educational_resources
+-- --------------------------------------------------------------------------
+CREATE TABLE educational_resources (
+    id          SERIAL PRIMARY KEY,
+    title       VARCHAR(200) NOT NULL,
+    description TEXT,
+    category    VARCHAR(100),
+    content     TEXT,
+    url         VARCHAR(1000),
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT educational_resources_content_or_url CHECK (content IS NOT NULL OR url IS NOT NULL)
+);
+
+CREATE INDEX idx_educational_resources_category ON educational_resources (category);
+
+-- --------------------------------------------------------------------------
+-- discussion posts
 -- --------------------------------------------------------------------------
 CREATE TABLE posts (
     id            SERIAL PRIMARY KEY,
@@ -65,17 +88,21 @@ CREATE TABLE posts (
     user_id       INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     title         VARCHAR(200) NOT NULL,
     content       TEXT NOT NULL,
+    is_anonymous  BOOLEAN NOT NULL DEFAULT FALSE,
+    anon_alias    VARCHAR(50),
     created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- --------------------------------------------------------------------------
--- comments (architecture for future versions)
+-- discussion comments
 -- --------------------------------------------------------------------------
 CREATE TABLE comments (
     id         SERIAL PRIMARY KEY,
     post_id    INTEGER NOT NULL REFERENCES posts (id) ON DELETE CASCADE,
     user_id    INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     content    TEXT NOT NULL,
+    is_anonymous BOOLEAN NOT NULL DEFAULT FALSE,
+    anon_alias   VARCHAR(50),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -93,12 +120,59 @@ CREATE TABLE reports (
 );
 
 -- --------------------------------------------------------------------------
--- notifications (architecture for future versions)
+-- notifications
 -- --------------------------------------------------------------------------
 CREATE TABLE notifications (
     id         SERIAL PRIMARY KEY,
     user_id    INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    type       VARCHAR(50) NOT NULL,
     message    TEXT NOT NULL,
     is_read    BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- --------------------------------------------------------------------------
+-- private messaging
+-- --------------------------------------------------------------------------
+CREATE TABLE conversations (
+    id         SERIAL PRIMARY KEY,
+    user_a_id  INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    user_b_id  INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT conversations_unique_pair UNIQUE (user_a_id, user_b_id)
+);
+
+CREATE TABLE messages (
+    id              SERIAL PRIMARY KEY,
+    conversation_id INTEGER NOT NULL REFERENCES conversations (id) ON DELETE CASCADE,
+    sender_id       INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    content         TEXT NOT NULL,
+    is_read         BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_messages_conversation_id ON messages (conversation_id);
+CREATE INDEX idx_messages_sender_id ON messages (sender_id);
+
+-- --------------------------------------------------------------------------
+-- events
+-- --------------------------------------------------------------------------
+CREATE TABLE events (
+    id          SERIAL PRIMARY KEY,
+    title       VARCHAR(200) NOT NULL,
+    description TEXT,
+    date        TIMESTAMPTZ NOT NULL,
+    location    VARCHAR(200),
+    latitude    NUMERIC(10, 7),
+    longitude   NUMERIC(10, 7),
+    category    VARCHAR(100),
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_events_date ON events (date);
+CREATE INDEX idx_events_category ON events (category);
+
+
+ALTER TABLE events
+    ADD COLUMN IF NOT EXISTS latitude NUMERIC(10, 7),
+    ADD COLUMN IF NOT EXISTS longitude NUMERIC(10, 7);

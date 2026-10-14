@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const notificationService = require('./notificationService');
 
 // Get discussions/posts for a group
 async function getGroupPosts(communityId) {
@@ -9,8 +10,13 @@ async function getGroupPosts(communityId) {
        p.user_id,
        p.title,
        p.content,
+       p.is_anonymous,
+       p.anon_alias,
        p.created_at,
-       u.name AS author_name
+       (SELECT COUNT(*)::int
+        FROM comments c
+        WHERE c.post_id = p.id) AS comment_count,
+       CASE WHEN p.is_anonymous = TRUE THEN NULL ELSE u.name END AS author_name
      FROM posts p
      JOIN users u ON u.id = p.user_id
      WHERE p.community_id = $1
@@ -27,28 +33,50 @@ async function createGroupPost({
   userId,
   communityId,
   title,
-  content
+  content,
+  isAnonymous,
+  anonAlias
 }) {
-  const result = await db.query(
-    `INSERT INTO posts
-      (community_id, user_id, title, content)
-     VALUES ($1, $2, $3, $4)
-     RETURNING
-       id,
-       community_id,
-       user_id,
-       title,
-       content,
-       created_at`,
-    [
+  return db.transaction(async (client) => {
+    const result = await client.query(
+      `INSERT INTO posts
+        (community_id, user_id, title, content, is_anonymous, anon_alias)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING
+         id,
+         community_id,
+         user_id,
+         title,
+         content,
+         is_anonymous,
+         anon_alias,
+         created_at`,
+      [communityId, userId, title, content, isAnonymous, anonAlias]
+    );
+
+    const post = result.rows[0];
+    let author_name = null;
+    if (!isAnonymous) {
+      const author = await client.query('SELECT name FROM users WHERE id = $1', [userId]);
+      author_name = author.rows[0] ? author.rows[0].name : null;
+    }
+
+    const community = await client.query(
+      'SELECT name FROM communities WHERE id = $1',
+      [communityId]
+    );
+    await notificationService.createCommunityNotifications(
+      client,
       communityId,
       userId,
-      title,
-      content
-    ]
-  );
+      community.rows[0].name
+    );
 
-  return result.rows[0];
+    return {
+      ...post,
+      author_name
+    };
+  });
 }
 
 // Get a single post (with author) within a specific group
@@ -60,8 +88,10 @@ async function getGroupPost(communityId, postId) {
        p.user_id,
        p.title,
        p.content,
+       p.is_anonymous,
+       p.anon_alias,
        p.created_at,
-       u.name AS author_name
+       CASE WHEN p.is_anonymous = TRUE THEN NULL ELSE u.name END AS author_name
      FROM posts p
      JOIN users u ON u.id = p.user_id
      WHERE p.id = $1
@@ -80,8 +110,10 @@ async function getComments(postId) {
        c.post_id,
        c.user_id,
        c.content,
+       c.is_anonymous,
+       c.anon_alias,
        c.created_at,
-       u.name AS author_name
+       CASE WHEN c.is_anonymous = TRUE THEN NULL ELSE u.name END AS author_name
      FROM comments c
      JOIN users u ON u.id = c.user_id
      WHERE c.post_id = $1
@@ -93,32 +125,48 @@ async function getComments(postId) {
 }
 
 // Create a comment on a post
-async function createComment({ userId, postId, content }) {
-  const result = await db.query(
-    `INSERT INTO comments
-       (post_id, user_id, content)
-     VALUES ($1, $2, $3)
-     RETURNING
-       id,
-       post_id,
-       user_id,
-       content,
-       created_at`,
-    [postId, userId, content.trim()]
-  );
+async function createComment({ userId, postId, content, isAnonymous, anonAlias }) {
+  return db.transaction(async (client) => {
+    const result = await client.query(
+      `INSERT INTO comments
+         (post_id, user_id, content, is_anonymous, anon_alias)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING
+         id,
+         post_id,
+         user_id,
+         content,
+         is_anonymous,
+         anon_alias,
+         created_at`,
+      [postId, userId, content.trim(), isAnonymous, anonAlias]
+    );
 
-  const comment = result.rows[0];
+    const comment = result.rows[0];
+    let author_name = null;
+    if (!isAnonymous) {
+      const author = await client.query('SELECT name FROM users WHERE id = $1', [userId]);
+      author_name = author.rows[0] ? author.rows[0].name : 'Anonymous';
+    }
 
-  // Attach the author name so the client can render it directly.
-  const author = await db.query(
-    'SELECT name FROM users WHERE id = $1',
-    [userId]
-  );
+    const post = await client.query(
+      'SELECT user_id FROM posts WHERE id = $1',
+      [postId]
+    );
+    if (post.rows[0].user_id !== userId) {
+      await notificationService.createNotification(
+        client,
+        post.rows[0].user_id,
+        'comment',
+        'Someone commented on your discussion.'
+      );
+    }
 
-  return {
-    ...comment,
-    author_name: author.rows[0] ? author.rows[0].name : 'Anonymous'
-  };
+    return {
+      ...comment,
+      author_name
+    };
+  });
 }
 
 // Delete a comment (only the author can delete their own comment)

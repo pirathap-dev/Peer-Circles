@@ -51,12 +51,24 @@ export const api = {
   login: (email, password) =>
     request('/auth/login', { method: 'POST', body: { email, password } }),
 
+  adminLogin: (username, password) =>
+    request('/auth/admin/login', { method: 'POST', body: { username, password } }),
+
   me: (token) => request('/auth/me', { token }),
 
   updateProfile: (token, { name, email, avatar_url }) =>
     request('/auth/me', {
       method: 'PATCH',
       body: { name, email, avatar_url },
+      token,
+    }),
+
+  getPrivacySettings: (token) => request('/auth/privacy', { token }),
+
+  updatePrivacySettings: (token, settings) =>
+    request('/auth/privacy', {
+      method: 'PATCH',
+      body: settings,
       token,
     }),
 
@@ -74,11 +86,29 @@ export const api = {
 
   getCommunity: (token, id) => request(`/communities/${id}`, { token }),
 
-  joinCommunity: (token, id) =>
-    request(`/communities/${id}/join`, { method: 'POST', token }),
+  joinCommunity: (token, id, { anonymous = false } = {}) =>
+    request(`/communities/${id}/join`, {
+      method: 'POST',
+      body: { anonymous },
+      token,
+    }),
 
   leaveCommunity: (token, id) =>
     request(`/communities/${id}/leave`, { method: 'DELETE', token }),
+
+  leaveGroup: (token, id) =>
+    request(`/groups/${id}/leave`, { method: 'DELETE', token }),
+
+  createPeerGroup: (token, group) =>
+    request('/groups', { method: 'POST', body: group, token }),
+
+  // Update the anonymous preference for an existing membership
+  setMembershipAnonymous: (token, id, anonymous) =>
+    request(`/communities/${id}/anonymous`, {
+      method: 'PATCH',
+      body: { anonymous },
+      token,
+    }),
 
   // Group discussion (post) endpoints
   listDiscussions: (token, communityId) =>
@@ -87,18 +117,18 @@ export const api = {
   getDiscussion: (token, communityId, discussionId) =>
     request(`/groups/${communityId}/posts/${discussionId}`, { token }),
 
-  createDiscussion: (token, communityId, { title, content }) =>
+  createDiscussion: (token, communityId, { title, content, is_anonymous = false }) =>
     request(`/groups/${communityId}/posts`, {
       method: 'POST',
-      body: { title, content },
+      body: { title, content, is_anonymous },
       token,
     }),
 
   // Post/comment (discussion reply) endpoints
-  addComment: (token, postId, content) =>
+  addComment: (token, postId, content, { is_anonymous = false } = {}) =>
     request(`/groups/${postId}/comments`, {
       method: 'POST',
-      body: { content },
+      body: { content, is_anonymous },
       token,
     }),
 
@@ -107,4 +137,62 @@ export const api = {
       method: 'DELETE',
       token,
     }),
+
+  // ── Private messaging endpoints ──────────────────────────────────────
+  // GET /messages/conversations  → { conversations: [...] }
+  getConversations: (token) =>
+    request('/messages/conversations', { token }),
+
+  // GET /messages/:conversationId  → { messages: [...] }
+  getMessages: (token, conversationId) =>
+    request(`/messages/${conversationId}`, { token }),
+
+  // POST /messages  → { message: {...} }
+  // body: { conversation_id, content }
+  sendMessage: (token, conversationId, content) =>
+    request('/messages', {
+      method: 'POST',
+      body: { conversation_id: conversationId, content },
+      token,
+    }),
+
+  // POST /messages/conversations  → { conversation: {...} }
+  // Used to start a brand-new conversation with a user.
+  // body: { recipient_id }
+  startConversation: (token, recipientId) =>
+    request('/messages/conversations', {
+      method: 'POST',
+      body: { recipient_id: recipientId },
+      token,
+    }),
+
+  // DELETE /messages/:messageId  → { success: true }
+  deleteMessage: (token, messageId) =>
+    request(`/messages/${messageId}`, { method: 'DELETE', token }),
+
+  // ── Educational Resources endpoints ──────────────────────────────────
+  getResources: (token) => request('/resources', { token }),
+  
+  getResource: (token, id) => request(`/resources/${id}`, { token }),
+
+  // ── Events endpoints ───────────────────────────────────────────────
+  getEvents: (token, { category, search, upcomingOnly } = {}) => {
+    const params = new URLSearchParams();
+    if (category) params.append('category', category);
+    if (search) params.append('search', search);
+    if (upcomingOnly) params.append('upcomingOnly', 'true');
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    return request(`/events${qs}`, { token });
+  },
+  getEventDetails: (token, id) => request(`/events/${id}`, { token }),
+  createEvent: (token, event) =>
+    request('/events', { method: 'POST', body: event, token }),
+  createResource: (token, resource) =>
+    request('/resources', { method: 'POST', body: resource, token }),
+
+  // ── Notifications endpoints ──────────────────────────────────────────
+  getNotifications: (token) => request('/notifications', { token }),
+
+  markNotificationAsRead: (token, id) =>
+    request(`/notifications/${id}/read`, { method: 'PUT', token }),
 };

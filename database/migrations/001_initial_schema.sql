@@ -6,4 +6,4 @@
 --   psql "$DATABASE_URL" -f database/migrations/001_initial_schema.sql
 -- ==========================================================================
 
-\i ../schema.sql
+\ir ../schema.sql
