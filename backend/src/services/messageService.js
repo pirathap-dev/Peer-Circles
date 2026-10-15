@@ -16,7 +16,7 @@ async function resolveOtherUser(otherUserId, requestingUserId) {
   const user = userRes.rows[0];
 
   const anonQuery = `
-    SELECT cm.anonymous, cm.anon_alias
+    SELECT cm.anonymous
     FROM community_members cm
     WHERE cm.user_id = $1
       AND cm.community_id IN (
@@ -37,7 +37,7 @@ async function resolveOtherUser(otherUserId, requestingUserId) {
   if (sharesGroup) {
     if (anonRes.rows[0].anonymous === true) {
       is_anonymous = true;
-      anon_alias = anonRes.rows[0].anon_alias;
+      anon_alias = 'Anonymous member';
       display_name = anon_alias;
       name = null;
       avatar_url = null;
@@ -190,11 +190,12 @@ async function sendMessage({ conversationId, senderId, content }) {
       RETURNING id, conversation_id, sender_id, content, is_read, created_at;
     `, [conversationId, senderId, content]);
 
+    const sender = await resolveOtherUser(senderId, recipientId);
     await notificationService.createNotification(
       client,
       recipientId,
       'message',
-      'You received a new private message.'
+      `You received a new private message from ${sender.display_name}.`
     );
 
     return msgRes.rows[0];

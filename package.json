@@ -1,0 +1,14 @@
+{
+  "name": "peer-circles",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Peer Circles application",
+  "scripts": {
+    "start": "npm --prefix frontend start",
+    "start:android": "npm --prefix frontend run android",
+    "start:web": "npm --prefix frontend run web",
+    "backend": "npm --prefix backend run dev",
+    "build:apk": "npm --prefix frontend exec --yes --package=eas-cli -- eas build --platform android --profile apk",
+    "build:ios": "npm --prefix frontend exec --yes --package=eas-cli -- eas build --platform ios --profile production"
+  }
+}

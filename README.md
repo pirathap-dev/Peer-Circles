@@ -20,6 +20,12 @@ assets require an internet connection.
 PostgreSQL is the database for this project. The complete schema is maintained
 in `database/schema.sql`; database SQL and migrations belong under `database/`.
 
+To add friend requests and friend management to an existing database, apply
+`database/migrations/012_create_friend_relationships.sql`. Users can search
+public profiles by name, accept or reject requests, cancel sent requests, and
+remove friends. Private one-to-one messages remain available independently of
+friend status, subject to each user's private-message setting.
+
 To create a fresh database from PowerShell, create the database first, then run
 the schema and optional sample data:
 

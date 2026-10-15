@@ -167,6 +167,7 @@ export default function HomeScreen() {
 
   const shortcuts = [
     { label: 'Messages', icon: '💬', screen: 'MessagesInbox' },
+    { label: 'Friends', icon: '👥', screen: 'Friends' },
     { label: 'Events', icon: '📅', screen: 'Events' },
     { label: 'Resources', icon: '📚', screen: 'EducationalResources' },
     { label: 'Alerts', icon: '🔔', screen: 'Notifications' },

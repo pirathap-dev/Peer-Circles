@@ -11,8 +11,9 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  Pressable,
 } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { colors, spacing } from '../config';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -93,43 +94,79 @@ export default function ConversationScreen() {
   const [messageText, setMessageText] = useState('');
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
 
   const flatListRef = useRef(null);
 
   // Set screen header title
-  useEffect(() => {
-    navigation.setOptions({
-      title: isOtherAnon ? `🎭 ${displayName}` : displayName,
-      headerRight: () => (
-        <View style={styles.headerBadge}>
-          {isOtherAnon && (
-            <View style={styles.anonHeaderBadge}>
-              <Text style={styles.anonHeaderBadgeText}>Anonymous</Text>
-            </View>
-          )}
-        </View>
-      ),
-    });
-  }, [navigation, displayName, isOtherAnon]);
-
   // -------------------------------------------------------------------
   // Load messages
   // -------------------------------------------------------------------
-  const load = useCallback(async () => {
+  const load = useCallback(async (showLoading = false) => {
+    if (showLoading) setLoading(true);
     try {
-      setError('');
       const data = await api.getMessages(token, conversationId);
-      setMessages(data.messages || []);
+      setError('');
+      setMessages((current) => {
+        const optimistic = current.filter((message) => message._optimistic);
+        const incoming = data.messages || [];
+        const pending = optimistic.filter((message) => !incoming.some((serverMessage) =>
+          String(serverMessage.sender_id) === String(message.sender_id) &&
+          serverMessage.content === message.content &&
+          Math.abs(new Date(serverMessage.created_at) - new Date(message.created_at)) < 60000
+        ));
+        return [...incoming, ...pending];
+      });
+      return true;
     } catch (err) {
-      setError(err.message || 'Could not load messages.');
+      const message = err.message || 'Could not load messages.';
+      if (showLoading) setError(message);
+      return false;
     } finally {
       setLoading(false);
     }
   }, [token, conversationId]);
 
-  useEffect(() => {
-    load();
+  const refreshMessages = useCallback(async () => {
+    setRefreshing(true);
+    const refreshed = await load();
+    setRefreshing(false);
+    if (!refreshed) {
+      Alert.alert('Could not refresh chat', 'Check your connection and try again.');
+    }
   }, [load]);
+
+  useEffect(() => {
+    navigation.setOptions({
+      title: isOtherAnon ? `🎭 ${displayName}` : displayName,
+      headerRight: () => (
+        <View style={styles.headerActions}>
+          {isOtherAnon && (
+            <View style={styles.anonHeaderBadge}>
+              <Text style={styles.anonHeaderBadgeText}>Anonymous</Text>
+            </View>
+          )}
+          <Pressable
+            onPress={refreshMessages}
+            disabled={refreshing}
+            style={styles.headerRefresh}
+            accessibilityRole="button"
+            accessibilityLabel="Refresh chat messages"
+          >
+            <Text style={styles.headerRefreshText}>{refreshing ? 'Refreshing…' : 'Refresh'}</Text>
+          </Pressable>
+        </View>
+      ),
+    });
+  }, [navigation, displayName, isOtherAnon, refreshMessages, refreshing]);
+
+  useFocusEffect(
+    useCallback(() => {
+      load(true);
+      const interval = setInterval(() => load(), 2500);
+      return () => clearInterval(interval);
+    }, [load])
+  );
 
   // Scroll to bottom when messages load / update
   useEffect(() => {
@@ -367,6 +404,22 @@ const styles = StyleSheet.create({
   // Header badge
   headerBadge: {
     marginRight: spacing.sm,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginRight: spacing.sm,
+  },
+  headerRefresh: {
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.xs,
+  },
+  headerRefreshText: {
+    color: colors.primary,
+    fontSize: 14,
+    fontWeight: '600',
+    fontFamily: 'System',
   },
   anonHeaderBadge: {
     backgroundColor: colors.primary,

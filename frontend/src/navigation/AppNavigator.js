@@ -15,6 +15,7 @@ import DiscussionListScreen from '../screens/DiscussionListScreen';
 import CreateDiscussionScreen from '../screens/CreateDiscussionScreen';
 import DiscussionDetailScreen from '../screens/DiscussionDetailScreen';
 import MessagesInboxScreen from '../screens/MessagesInboxScreen';
+import FriendsScreen from '../screens/FriendsScreen';
 import ConversationScreen from '../screens/ConversationScreen';
 import MemberProfileScreen from '../screens/MemberProfileScreen';
 import EducationalResourcesScreen from '../screens/EducationalResourcesScreen';
@@ -98,6 +99,11 @@ export default function AppNavigator() {
                 name="MessagesInbox"
                 component={MessagesInboxScreen}
                 options={{ title: 'Messages' }}
+              />
+              <Stack.Screen
+                name="Friends"
+                component={FriendsScreen}
+                options={{ title: 'Friends' }}
               />
               <Stack.Screen
                 name="Conversation"

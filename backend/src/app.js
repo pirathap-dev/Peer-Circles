@@ -12,6 +12,7 @@ const messageRoutes = require('./routes/messageRoutes');
 const resourceRoutes = require('./routes/resourceRoutes');
 const eventRoutes = require('./routes/eventRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const friendRoutes = require('./routes/friendRoutes');
 
 const app = express();
 
@@ -31,6 +32,7 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/resources', resourceRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/friends', friendRoutes);
 
 app.use((_req, res) => {
   res.status(404).json({ error: 'Route not found.' });

@@ -137,10 +137,26 @@ export default function MessagesInboxScreen() {
     load();
   }, [load]);
 
-  function onRefresh() {
+  const onRefresh = useCallback(() => {
     setRefreshing(true);
     load(true);
-  }
+  }, [load]);
+
+  useEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <TouchableOpacity
+          onPress={onRefresh}
+          disabled={refreshing}
+          style={styles.headerRefresh}
+          accessibilityRole="button"
+          accessibilityLabel="Refresh chats"
+        >
+          <Text style={styles.headerRefreshText}>{refreshing ? 'Refreshing…' : 'Refresh'}</Text>
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, refreshing, onRefresh]);
 
   function openConversation(conversation) {
     navigation.navigate('Conversation', {
@@ -237,6 +253,8 @@ const styles = StyleSheet.create({
     fontFamily: 'System',
   },
   retry: { width: 200 },
+  headerRefresh: { paddingHorizontal: spacing.sm, paddingVertical: spacing.xs },
+  headerRefreshText: { color: colors.primary, fontSize: 14, fontWeight: '600' },
 
   // List item
   item: {

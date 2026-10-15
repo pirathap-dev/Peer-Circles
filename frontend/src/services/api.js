@@ -170,6 +170,32 @@ export const api = {
   deleteMessage: (token, messageId) =>
     request(`/messages/${messageId}`, { method: 'DELETE', token }),
 
+  // ── Friends endpoints ───────────────────────────────────────────────
+  getFriendRelationships: (token) => request('/friends', { token }),
+
+  searchPeople: (token, search) =>
+    request(`/friends/search?search=${encodeURIComponent(search)}`, { token }),
+
+  sendFriendRequest: (token, recipientId) =>
+    request('/friends/requests', {
+      method: 'POST',
+      body: { recipient_id: recipientId },
+      token,
+    }),
+
+  respondToFriendRequest: (token, requestId, action) =>
+    request(`/friends/requests/${requestId}`, {
+      method: 'PATCH',
+      body: { action },
+      token,
+    }),
+
+  cancelFriendRequest: (token, requestId) =>
+    request(`/friends/requests/${requestId}`, { method: 'DELETE', token }),
+
+  removeFriend: (token, friendId) =>
+    request(`/friends/${friendId}`, { method: 'DELETE', token }),
+
   // ── Educational Resources endpoints ──────────────────────────────────
   getResources: (token) => request('/resources', { token }),
   
