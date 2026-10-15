@@ -26,6 +26,23 @@ public profiles by name, accept or reject requests, cancel sent requests, and
 remove friends. Private one-to-one messages remain available independently of
 friend status, subject to each user's private-message setting.
 
+## Deploy backend and build Android APK
+
+The Express API can be deployed from `backend/` to Vercel using the serverless
+entry point in `backend/api/`. Configure `DATABASE_URL` and `JWT_SECRET` as
+Vercel project environment variables; do not put database credentials in the
+APK or frontend environment. Apply the SQL migrations in `database/migrations/`
+to Neon before testing the deployed API.
+
+Set `EXPO_PUBLIC_API_URL` in the EAS `preview` environment to the deployed API
+base URL ending in `/api`, then build the installable APK from `frontend/`:
+
+```powershell
+vercel --cwd backend
+eas env:create --environment preview --name EXPO_PUBLIC_API_URL --value https://<your-api-domain>/api
+eas build --platform android --profile apk
+```
+
 To create a fresh database from PowerShell, create the database first, then run
 the schema and optional sample data:
 

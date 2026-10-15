@@ -40,7 +40,11 @@ app.use((_req, res) => {
 
 app.use(errorHandler);
 
-const port = config.port;
-app.listen(port, () => {
-  console.log(`Community Support Network API running on port ${port}`);
-});
+if (require.main === module) {
+  const port = config.port;
+  app.listen(port, () => {
+    console.log(`Community Support Network API running on port ${port}`);
+  });
+}
+
+module.exports = app;
